@@ -82,7 +82,9 @@ Bridge.prototype.getTile = function(z, x, y, callback) {
         map.resize(256, 256);
         map.extent = sm.bbox(+x,+y,+z, false, '900913');
         map.render(new mapnik.DataTile(+z,+x,+y), opts, function(err, image) {
-            source._map.release(map);
+            process.nextTick(function() { source._map.release(map); });
+
+            if (err) return callback(err);
             // Fake empty RGBA to the rest of the tilelive API for now.
             image.isSolid(function(err, solid, key) {
                 // Cache hit.
@@ -136,7 +138,7 @@ Bridge.prototype.getInfo = function(callback) {
             return memo;
         }, {});
 
-        this._map.release(map);
+        process.nextTick(function() { this._map.release(map); }.bind(this));
         return callback(null, info);
     }.bind(this));
 };
