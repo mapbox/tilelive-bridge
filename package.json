@@ -1,0 +1,16 @@
+{
+    "name": "tilelive-bridge",
+    "version": "0.0.1",
+    "private": true,
+    "main": "./index.js",
+    "description": "Datasource => vector tiles bridge backend for tilelive",
+    "dependencies": {
+        "mapnik": "git+ssh://git@github.com:mapbox/node-mapnik-data-tile.git",
+        "sphericalmercator": "1.0.x",
+        "generic-pool": "~2.0.0"
+    },
+    "scripts": {
+        "test": "mocha -R spec"
+    },
+    "engines": { "node": "0.6.x || 0.8.x" }
+}
