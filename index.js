@@ -50,7 +50,10 @@ Bridge.prototype.update = function(opts, callback) {
             destroy: function(map) { delete map; },
             max: require('os').cpus().length
         });
-        return this._map.destroyAllNow(callback);
+        // If no nextTick the stale pool can be used to acquire new maps.
+        return process.nextTick(function() {
+            this._map.destroyAllNow(callback);
+        }.bind(this));
     }
     return callback();
 };
