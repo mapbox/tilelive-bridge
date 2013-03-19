@@ -23,6 +23,15 @@ describe('init', function() {
             done();
         });
     });
+    it('should load from filepath', function(done) {
+        new Bridge('bridge://' + path.resolve(__dirname + '/test-a.xml'), function(err, source) {
+            assert.ifError(err);
+            assert.ok(source);
+            assert.equal(source._xml, xml.a);
+            assert.equal(source._base, __dirname);
+            done();
+        });
+    });
     it('#open should call all listeners', function(done) {
         var b = new Bridge({ xml: xml.a, base:__dirname + '/' });
         var remaining = 3;

@@ -1,12 +1,22 @@
+var url = require('url');
 var path = require('path');
 var zlib = require('zlib');
 var mapnik = require('mapnik');
 var Pool = require('generic-pool').Pool;
+var fs = require('fs');
 var sm = new (require('sphericalmercator'));
 
 module.exports = Bridge;
 
 function Bridge(uri, callback) {
+    if (typeof uri === 'string') {
+        var filepath = path.resolve(url.parse(uri, true).pathname);
+        return fs.readFile(filepath, 'utf8', function(err, xml) {
+            if (err) return callback(err);
+            return new Bridge({ xml: xml, base: path.dirname(filepath) }, callback);
+        });
+    }
+
     if (!uri.xml) return callback && callback(new Error('No xml'));
 
     this._uri = uri;
