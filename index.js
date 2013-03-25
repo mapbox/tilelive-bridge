@@ -37,7 +37,6 @@ function Bridge(uri, callback) {
 
     // 'blank' option forces all solid tiles to be interpreted as blank.
     this._blank = typeof uri.blank === 'boolean' ? uri.blank : true;
-    this._solidCache = {};
 
     if (callback) this.once('open', callback);
 
@@ -120,27 +119,22 @@ Bridge.prototype.getTile = function(z, x, y, callback) {
             // Fake empty RGBA to the rest of the tilelive API for now.
             image.isSolid(function(err, solid, key) {
                 if (err) return callback(err);
-                // Cache hit.
-                if (solid && source._solidCache[key])
-                    return callback(null, source._solidCache[key], headers);
                 // Solid handling.
                 var done = function(err, buffer) {
                     if (err) return callback(err);
-                    if (solid !== false) {
-                        // Use the null rgba string for blank solids.
-                        if (source._blank || !key) {
-                            buffer.solid = '0,0,0,0';
-                        // Fake a hex code by md5ing the key.
-                        } else {
-                            var mockrgb = crypto.createHash('md5').update(key).digest('hex').substr(0,6);
-                            buffer.solid = [
-                                parseInt(mockrgb.substr(0,2),16),
-                                parseInt(mockrgb.substr(2,2),16),
-                                parseInt(mockrgb.substr(4,2),16),
-                                1
-                            ].join(',');
-                        }
-                        source._solidCache[key] = buffer;
+                    if (solid === false) return callback(err, buffer, headers);
+                    // Use the null rgba string for blank solids.
+                    if (source._blank || !key) {
+                        buffer.solid = '0,0,0,0';
+                    // Fake a hex code by md5ing the key.
+                    } else {
+                        var mockrgb = crypto.createHash('md5').update(key).digest('hex').substr(0,6);
+                        buffer.solid = [
+                            parseInt(mockrgb.substr(0,2),16),
+                            parseInt(mockrgb.substr(2,2),16),
+                            parseInt(mockrgb.substr(4,2),16),
+                            1
+                        ].join(',');
                     }
                     return callback(err, buffer, headers);
                 };
