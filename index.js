@@ -32,6 +32,10 @@ function Bridge(uri, callback) {
 };
 require('util').inherits(Bridge, require('events').EventEmitter);
 
+Bridge.registerProtocols = function(tilelive) {
+    tilelive.protocols['bridge:'] = Bridge;
+};
+
 // Helper for callers to ensure source is open. This is not built directly
 // into the constructor because there is no good auto cache-keying system
 // for these tile sources (ie. sharing/caching is best left to the caller).
