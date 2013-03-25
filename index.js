@@ -5,6 +5,7 @@ var crypto = require('crypto');
 var mapnik = require('mapnik');
 var Pool = require('generic-pool').Pool;
 var fs = require('fs');
+var qs = require('querystring');
 var sm = new (require('sphericalmercator'));
 
 // Increase number of threads to 1.5x the number of logical CPUs.
@@ -15,11 +16,12 @@ module.exports = Bridge;
 
 function Bridge(uri, callback) {
     if (typeof uri === 'string' || (uri.protocol && !uri.xml)) {
-        uri = typeof uri === 'string' ? url.parse(uri, true) : uri;
+        uri = typeof uri === 'string' ? url.parse(uri) : uri;
+        uri.query = typeof uri.query === 'string' ? qs.parse(uri.query) : (uri.query || {});
         var filepath = path.resolve(uri.pathname);
         return fs.readFile(filepath, 'utf8', function(err, xml) {
             if (err) return callback(err);
-            var opts = Object.keys(uri.query || {}).reduce(function(memo, key) {
+            var opts = Object.keys(uri.query).reduce(function(memo, key) {
                 memo[key] = !!parseInt(uri.query[key], 10);
                 return memo;
             }, {xml:xml, base:path.dirname(filepath)});
