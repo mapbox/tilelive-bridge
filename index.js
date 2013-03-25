@@ -6,6 +6,10 @@ var Pool = require('generic-pool').Pool;
 var fs = require('fs');
 var sm = new (require('sphericalmercator'));
 
+// Increase number of threads to 1.5x the number of logical CPUs.
+var threads = Math.ceil(Math.max(4, require('os').cpus().length * 1.5));
+require('eio').setMinParallel(threads);
+
 module.exports = Bridge;
 
 function Bridge(uri, callback) {
