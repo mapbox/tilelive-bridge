@@ -9,8 +9,9 @@ var sm = new (require('sphericalmercator'));
 module.exports = Bridge;
 
 function Bridge(uri, callback) {
-    if (typeof uri === 'string') {
-        var filepath = path.resolve(url.parse(uri, true).pathname);
+    if (typeof uri === 'string' || (uri.protocol && !uri.xml)) {
+        uri = typeof uri === 'string' ? url.parse(uri, true) : uri;
+        var filepath = path.resolve(uri.pathname);
         return fs.readFile(filepath, 'utf8', function(err, xml) {
             if (err) return callback(err);
             return new Bridge({ xml: xml, base: path.dirname(filepath) }, callback);
