@@ -27,6 +27,18 @@ describe('init', function() {
         new Bridge('bridge://' + path.resolve(__dirname + '/test-a.xml'), function(err, source) {
             assert.ifError(err);
             assert.ok(source);
+            assert.equal(source._blank, true);
+            assert.equal(source._deflate, true);
+            assert.equal(source._xml, xml.a);
+            assert.equal(source._base, __dirname);
+            done();
+        });
+    });
+    it('should load query params', function(done) {
+        new Bridge('bridge://' + path.resolve(__dirname + '/test-a.xml?blank=0&deflate=0'), function(err, source) {
+            assert.ifError(err);
+            assert.equal(source._blank, false);
+            assert.equal(source._deflate, false);
             assert.equal(source._xml, xml.a);
             assert.equal(source._base, __dirname);
             done();
@@ -79,17 +91,20 @@ describe('init', function() {
 describe('tiles', function() {
     var sources = {
         a: new Bridge({ xml:xml.a, base:__dirname + '/' }),
-        b: new Bridge({ xml:xml.b, base:__dirname + '/', deflate:false })
+        b: new Bridge({ xml:xml.b, base:__dirname + '/', deflate:false }),
+        c: new Bridge({ xml:xml.a, base:__dirname + '/', blank:false })
     };
     var tests = {
-        a: ['0.0.0', '1.0.0', '1.0.1'],
-        b: ['0.0.0']
+        a: ['0.0.0', '1.0.0', '1.0.1', {key:'10.0.0',solid:'0,0,0,0'}, {key:'10.765.295',solid:'0,0,0,0'}],
+        b: ['0.0.0'],
+        c: [{key:'10.0.0',solid:'0,0,0,0'}, {key:'10.765.295', solid:'125,121,48,1'}]
     };
     Object.keys(tests).forEach(function(source) {
         before(function(done) { sources[source].open(done); });
     });
     Object.keys(tests).forEach(function(source) {
-        tests[source].forEach(function(key) {
+        tests[source].forEach(function(obj) {
+            var key = obj.key ? obj.key : obj;
             var z = key.split('.')[0] | 0;
             var x = key.split('.')[1] | 0;
             var y = key.split('.')[2] | 0;
@@ -97,7 +112,10 @@ describe('tiles', function() {
                 sources[source].getTile(z,x,y, function(err, buffer, headers) {
                     assert.ifError(err);
                     assert.equal(headers['Content-Type'], 'application/x-protobuf');
-                    assert.equal(headers['Content-Encoding'], source === 'a' ? 'deflate' : undefined);
+                    assert.equal(headers['Content-Encoding'], source !== 'b' ? 'deflate' : undefined);
+
+                    // Test solid key generation.
+                    if (obj.solid) assert.equal(buffer.solid, obj.solid);
 
                     var filepath = __dirname + '/expected/' + source + '.' + key + '.vector.pbf';
                     var expected = fs.readFileSync(filepath);

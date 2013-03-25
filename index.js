@@ -1,6 +1,7 @@
 var url = require('url');
 var path = require('path');
 var zlib = require('zlib');
+var crypto = require('crypto');
 var mapnik = require('mapnik');
 var Pool = require('generic-pool').Pool;
 var fs = require('fs');
@@ -18,7 +19,11 @@ function Bridge(uri, callback) {
         var filepath = path.resolve(uri.pathname);
         return fs.readFile(filepath, 'utf8', function(err, xml) {
             if (err) return callback(err);
-            return new Bridge({ xml: xml, base: path.dirname(filepath) }, callback);
+            var opts = Object.keys(uri.query || {}).reduce(function(memo, key) {
+                memo[key] = !!parseInt(uri.query[key], 10);
+                return memo;
+            }, {xml:xml, base:path.dirname(filepath)});
+            return new Bridge(opts, callback);
         });
     }
 
@@ -27,6 +32,9 @@ function Bridge(uri, callback) {
     this._uri = uri;
     this._deflate = typeof uri.deflate === 'boolean' ? uri.deflate : true;
     this._base = path.resolve(uri.base || __dirname);
+
+    // 'blank' option forces all solid tiles to be interpreted as blank.
+    this._blank = typeof uri.blank === 'boolean' ? uri.blank : true;
     this._solidCache = {};
 
     if (callback) this.once('open', callback);
@@ -109,28 +117,35 @@ Bridge.prototype.getTile = function(z, x, y, callback) {
             if (err) return callback(err);
             // Fake empty RGBA to the rest of the tilelive API for now.
             image.isSolid(function(err, solid, key) {
+                if (err) return callback(err);
                 // Cache hit.
-                if (solid && source._solidCache[key]) {
+                if (solid && source._solidCache[key])
                     return callback(null, source._solidCache[key], headers);
-                }
-                // No deflate.
-                if (!source._deflate) {
-                    var buffer = image.getData();
-                    if (solid !== false) {
-                        buffer.solid = solid && '0,0,0,0';
-                        source._solidCache[key] = buffer;
-                    }
-                    return callback(err, buffer, headers);
-                }
-                // With deflate.
-                return zlib.deflate(image.getData(), function(err, buffer) {
+                // Solid handling.
+                var done = function(err, buffer) {
                     if (err) return callback(err);
                     if (solid !== false) {
-                        buffer.solid = solid && '0,0,0,0';
+                        // Use the null rgba string for blank solids.
+                        if (source._blank || !key) {
+                            buffer.solid = '0,0,0,0';
+                        // Fake a hex code by md5ing the key.
+                        } else {
+                            var mockrgb = crypto.createHash('md5').update(key).digest('hex').substr(0,6);
+                            buffer.solid = [
+                                parseInt(mockrgb.substr(0,2),16),
+                                parseInt(mockrgb.substr(2,2),16),
+                                parseInt(mockrgb.substr(4,2),16),
+                                1
+                            ].join(',');
+                        }
                         source._solidCache[key] = buffer;
                     }
                     return callback(err, buffer, headers);
-                });
+                };
+                // No deflate.
+                return !source._deflate
+                    ? done(null, image.getData())
+                    : zlib.deflate(image.getData(), done);
             });
         });
     });
