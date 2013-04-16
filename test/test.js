@@ -91,10 +91,10 @@ describe('tiles', function() {
                     assert.equal(headers['Content-Encoding'], source === 'a' ? 'deflate' : undefined);
 
                     var filepath = __dirname + '/expected/' + source + '.' + key + '.vector.pbf';
+                    //fs.writeFileSync(filepath, buffer);
                     var expected = fs.readFileSync(filepath);
                     assert.equal(expected.length, buffer.length);
                     assert.deepEqual(expected, buffer);
-                    // fs.writeFileSync(filepath, buffer);
                     done();
                 });
             });
