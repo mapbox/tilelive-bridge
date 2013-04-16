@@ -118,10 +118,10 @@ describe('tiles', function() {
                     if (obj.solid) assert.equal(buffer.solid, obj.solid);
 
                     var filepath = __dirname + '/expected/' + source + '.' + key + '.vector.pbf';
+                    //fs.writeFileSync(filepath, buffer);
                     var expected = fs.readFileSync(filepath);
                     assert.equal(expected.length, buffer.length);
                     assert.deepEqual(expected, buffer);
-                    // fs.writeFileSync(filepath, buffer);
                     done();
                 });
             });
