@@ -1,18 +1,42 @@
+var url = require('url');
 var path = require('path');
 var zlib = require('zlib');
+var crypto = require('crypto');
 var mapnik = require('mapnik');
 var Pool = require('generic-pool').Pool;
+var fs = require('fs');
+var qs = require('querystring');
 var sm = new (require('sphericalmercator'));
+
+// Increase number of threads to 1.5x the number of logical CPUs.
+var threads = Math.ceil(Math.max(4, require('os').cpus().length * 1.5));
+require('eio').setMinParallel(threads);
 
 module.exports = Bridge;
 
 function Bridge(uri, callback) {
+    if (typeof uri === 'string' || (uri.protocol && !uri.xml)) {
+        uri = typeof uri === 'string' ? url.parse(uri) : uri;
+        uri.query = typeof uri.query === 'string' ? qs.parse(uri.query) : (uri.query || {});
+        var filepath = path.resolve(uri.pathname);
+        return fs.readFile(filepath, 'utf8', function(err, xml) {
+            if (err) return callback(err);
+            var opts = Object.keys(uri.query).reduce(function(memo, key) {
+                memo[key] = !!parseInt(uri.query[key], 10);
+                return memo;
+            }, {xml:xml, base:path.dirname(filepath)});
+            return new Bridge(opts, callback);
+        });
+    }
+
     if (!uri.xml) return callback && callback(new Error('No xml'));
 
     this._uri = uri;
     this._deflate = typeof uri.deflate === 'boolean' ? uri.deflate : true;
     this._base = path.resolve(uri.base || __dirname);
-    this._solidCache = {};
+
+    // 'blank' option forces all solid tiles to be interpreted as blank.
+    this._blank = typeof uri.blank === 'boolean' ? uri.blank : true;
 
     if (callback) this.once('open', callback);
 
@@ -21,6 +45,10 @@ function Bridge(uri, callback) {
     }.bind(this));
 };
 require('util').inherits(Bridge, require('events').EventEmitter);
+
+Bridge.registerProtocols = function(tilelive) {
+    tilelive.protocols['bridge:'] = Bridge;
+};
 
 // Helper for callers to ensure source is open. This is not built directly
 // into the constructor because there is no good auto cache-keying system
@@ -50,7 +78,10 @@ Bridge.prototype.update = function(opts, callback) {
             destroy: function(map) { delete map; },
             max: require('os').cpus().length
         });
-        return this._map.destroyAllNow(callback);
+        // If no nextTick the stale pool can be used to acquire new maps.
+        return process.nextTick(function() {
+            this._map.destroyAllNow(callback);
+        }.bind(this));
     }
     return callback();
 };
@@ -82,31 +113,35 @@ Bridge.prototype.getTile = function(z, x, y, callback) {
         map.resize(256, 256);
         map.extent = sm.bbox(+x,+y,+z, false, '900913');
         map.render(new mapnik.VectorTile(+z,+x,+y), opts, function(err, image) {
-            source._map.release(map);
+            process.nextTick(function() { source._map.release(map); });
+
+            if (err) return callback(err);
             // Fake empty RGBA to the rest of the tilelive API for now.
             image.isSolid(function(err, solid, key) {
-                // Cache hit.
-                if (solid && source._solidCache[key]) {
-                    return callback(null, source._solidCache[key], headers);
-                }
-                // No deflate.
-                if (!source._deflate) {
-                    var buffer = image.getData();
-                    if (solid !== false) {
-                        buffer.solid = solid && '0,0,0,0';
-                        source._solidCache[key] = buffer;
-                    }
-                    return callback(err, buffer, headers);
-                }
-                // With deflate.
-                return zlib.deflate(image.getData(), function(err, buffer) {
+                if (err) return callback(err);
+                // Solid handling.
+                var done = function(err, buffer) {
                     if (err) return callback(err);
-                    if (solid !== false) {
-                        buffer.solid = solid && '0,0,0,0';
-                        source._solidCache[key] = buffer;
+                    if (solid === false) return callback(err, buffer, headers);
+                    // Use the null rgba string for blank solids.
+                    if (source._blank || !key) {
+                        buffer.solid = '0,0,0,0';
+                    // Fake a hex code by md5ing the key.
+                    } else {
+                        var mockrgb = crypto.createHash('md5').update(key).digest('hex').substr(0,6);
+                        buffer.solid = [
+                            parseInt(mockrgb.substr(0,2),16),
+                            parseInt(mockrgb.substr(2,2),16),
+                            parseInt(mockrgb.substr(4,2),16),
+                            1
+                        ].join(',');
                     }
                     return callback(err, buffer, headers);
-                });
+                };
+                // No deflate.
+                return !source._deflate
+                    ? done(null, image.getData())
+                    : zlib.deflate(image.getData(), done);
             });
         });
     });
@@ -136,7 +171,7 @@ Bridge.prototype.getInfo = function(callback) {
             return memo;
         }, {});
 
-        this._map.release(map);
+        process.nextTick(function() { this._map.release(map); }.bind(this));
         return callback(null, info);
     }.bind(this));
 };
