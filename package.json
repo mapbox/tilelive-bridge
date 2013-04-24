@@ -8,7 +8,7 @@
         "mapnik": "https://github.com/mapnik/node-mapnik/tarball/vector-tile",
         "sphericalmercator": "1.0.x",
         "generic-pool": "~2.0.0",
-        "eio": "0.1.x"
+        "eio": "https://github.com/developmentseed/node-eio/tarball/master"
     },
     "scripts": {
         "test": "mocha -R spec"
