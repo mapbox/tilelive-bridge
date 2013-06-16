@@ -5,7 +5,7 @@
     "main": "./index.js",
     "description": "Datasource => vector tiles bridge backend for tilelive",
     "dependencies": {
-        "mapnik": "https://github.com/mapnik/node-mapnik/tarball/vector-tile",
+        "mapnik": "1.0.0",
         "sphericalmercator": "1.0.x",
         "generic-pool": "~2.0.0",
         "eio": "~0.2.0"
