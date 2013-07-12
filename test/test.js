@@ -64,6 +64,8 @@ describe('init', function() {
                 assert.equal(8, info.maxzoom);
                 assert.deepEqual([0,0,2], info.center);
                 assert.deepEqual([-180,-85.0511,180,85.0511], info.bounds);
+                assert.deepEqual({"level2":"property"}, info.level1, 'JSON key stores deep attribute data');
+                assert.deepEqual(0, info.minzoom, 'JSON key does not overwrite other params');
                 done();
             });
         });
