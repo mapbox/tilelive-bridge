@@ -1,9 +1,13 @@
 {
     "name": "tilelive-bridge",
     "version": "0.0.1",
-    "private": true,
     "main": "./index.js",
     "description": "Datasource => vector tiles bridge backend for tilelive",
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/mapbox/tilelive-bridge.git"
+    },
+    "licenses": [{ "type": "BSD" }],
     "dependencies": {
         "mapnik": "1.0.0",
         "sphericalmercator": "1.0.x",
