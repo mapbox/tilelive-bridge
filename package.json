@@ -1,6 +1,6 @@
 {
     "name": "tilelive-bridge",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "main": "./index.js",
     "description": "Datasource => vector tiles bridge backend for tilelive",
     "repository": {
@@ -9,7 +9,7 @@
     },
     "licenses": [{ "type": "BSD" }],
     "dependencies": {
-        "mapnik": "1.0.0",
+        "mapnik": "1.1.x",
         "sphericalmercator": "1.0.x",
         "generic-pool": "~2.0.0",
         "eio": "~0.2.0"
