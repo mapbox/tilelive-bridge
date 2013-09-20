@@ -100,7 +100,7 @@ function show_json(filepath,vtile1,vtile2) {
     throw new Error('files json representations differs: \n'+e + '\n' + a + '\n');
 }
 
-function compare_vtiles(vtile1,vtile2) {
+function compare_vtiles(filepath,vtile1,vtile2) {
     assert.equal(vtile1.width(),vtile2.width());
     assert.equal(vtile1.height(),vtile2.height());
     assert.deepEqual(vtile1.names(),vtile2.names());
@@ -153,13 +153,13 @@ describe('tiles', function() {
                             vtile1.setData(expected_inflated);
                             zlib.inflate(buffer,function(err,buffer_inflated) {
                                 vtile2.setData(buffer_inflated);
-                                compare_vtiles(vtile1,vtile2);
+                                compare_vtiles(filepath,vtile1,vtile2);
                             });
                         });
                     } else {
                         vtile1.setData(expected);
                         vtile2.setData(buffer);
-                        compare_vtiles(vtile1,vtile2);
+                        compare_vtiles(filepath,vtile1,vtile2);
                     }
                     assert.equal(expected.length, buffer.length);
                     assert.deepEqual(expected, buffer);
