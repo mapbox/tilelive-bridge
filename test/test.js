@@ -2,6 +2,8 @@ var assert = require('assert');
 var Bridge = require('..');
 var path = require('path');
 var fs = require('fs');
+var mapnik = require('mapnik');
+var zlib = require('zlib');
 
 // Load fixture data.
 var xml = {
@@ -90,6 +92,28 @@ describe('init', function() {
     });
 });
 
+function show_json(filepath,vtile1,vtile2) {
+    var e = filepath+'.expected.json';
+    var a = filepath+'.actual.json';
+    fs.writeFileSync(e,JSON.stringify(vtile1,null,2));
+    fs.writeFileSync(a,JSON.stringify(vtile2,null,2));
+    throw new Error('files json representations differs: \n'+e + '\n' + a + '\n');
+}
+
+function compare_vtiles(vtile1,vtile2) {
+    assert.equal(vtile1.width(),vtile2.width());
+    assert.equal(vtile1.height(),vtile2.height());
+    assert.deepEqual(vtile1.names(),vtile2.names());
+    v1 = vtile1.toJSON();
+    v2 = vtile2.toJSON();
+    assert.deepEqual(vtile1.names(),vtile2.names());
+    try {
+      assert.deepEqual(v1,v2);
+    } catch (err) {
+      show_json(filepath,v1,v2);
+    }
+}
+
 describe('tiles', function() {
     var sources = {
         a: new Bridge({ xml:xml.a, base:__dirname + '/' }),
@@ -122,6 +146,21 @@ describe('tiles', function() {
                     var filepath = __dirname + '/expected/' + source + '.' + key + '.vector.pbf';
                     //fs.writeFileSync(filepath, buffer);
                     var expected = fs.readFileSync(filepath);
+                    var vtile1 = new mapnik.VectorTile(+z,+x,+y);
+                    var vtile2 = new mapnik.VectorTile(+z,+x,+y);
+                    if (headers['Content-Encoding'] == 'deflate') {
+                        zlib.inflate(expected,function(err,expected_inflated) {
+                            vtile1.setData(expected_inflated);
+                            zlib.inflate(buffer,function(err,buffer_inflated) {
+                                vtile2.setData(buffer_inflated);
+                                compare_vtiles(vtile1,vtile2);
+                            });
+                        });
+                    } else {
+                        vtile1.setData(expected);
+                        vtile2.setData(buffer);
+                        compare_vtiles(vtile1,vtile2);
+                    }
                     assert.equal(expected.length, buffer.length);
                     assert.deepEqual(expected, buffer);
                     done();
