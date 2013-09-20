@@ -119,6 +119,9 @@ Bridge.prototype.getTile = function(z, x, y, callback) {
 
         map.resize(256, 256);
         map.extent = sm.bbox(+x,+y,+z, false, '900913');
+        // also pass buffer_size in options to be forward compatible with recent node-mapnik
+        // https://github.com/mapnik/node-mapnik/issues/175
+        opts.buffer_size = map.bufferSize;
         map.render(new mapnik.VectorTile(+z,+x,+y), opts, function(err, image) {
             process.nextTick(function() { source._map.release(map); });
 
