@@ -104,8 +104,8 @@ function compare_vtiles(filepath,vtile1,vtile2) {
     assert.equal(vtile1.width(),vtile2.width());
     assert.equal(vtile1.height(),vtile2.height());
     assert.deepEqual(vtile1.names(),vtile2.names());
-    v1 = vtile1.toJSON();
-    v2 = vtile2.toJSON();
+    var v1 = vtile1.toJSON();
+    var v2 = vtile2.toJSON();
     assert.deepEqual(vtile1.names(),vtile2.names());
     try {
       assert.deepEqual(v1,v2);
