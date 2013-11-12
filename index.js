@@ -43,7 +43,7 @@ function Bridge(uri, callback) {
     this._base = path.resolve(uri.base || __dirname);
 
     // 'blank' option forces all solid tiles to be interpreted as blank.
-    this._blank = typeof uri.blank === 'boolean' ? uri.blank : true;
+    this._blank = typeof uri.blank === 'boolean' ? uri.blank : false;
 
     if (callback) this.once('open', callback);
 

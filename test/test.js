@@ -29,7 +29,7 @@ describe('init', function() {
         new Bridge('bridge://' + path.resolve(__dirname + '/test-a.xml'), function(err, source) {
             assert.ifError(err);
             assert.ok(source);
-            assert.equal(source._blank, true);
+            assert.equal(source._blank, false);
             assert.equal(source._deflate, true);
             assert.equal(source._xml, xml.a);
             assert.equal(source._base, __dirname);
@@ -37,9 +37,9 @@ describe('init', function() {
         });
     });
     it('should load query params', function(done) {
-        new Bridge('bridge://' + path.resolve(__dirname + '/test-a.xml?blank=0&deflate=0'), function(err, source) {
+        new Bridge('bridge://' + path.resolve(__dirname + '/test-a.xml?blank=1&deflate=0'), function(err, source) {
             assert.ifError(err);
-            assert.equal(source._blank, false);
+            assert.equal(source._blank, true);
             assert.equal(source._deflate, false);
             assert.equal(source._xml, xml.a);
             assert.equal(source._base, __dirname);
@@ -116,7 +116,7 @@ function compare_vtiles(filepath,vtile1,vtile2) {
 
 describe('tiles', function() {
     var sources = {
-        a: new Bridge({ xml:xml.a, base:__dirname + '/' }),
+        a: new Bridge({ xml:xml.a, base:__dirname + '/', blank:true }),
         b: new Bridge({ xml:xml.b, base:__dirname + '/', deflate:false }),
         c: new Bridge({ xml:xml.a, base:__dirname + '/', blank:false })
     };
