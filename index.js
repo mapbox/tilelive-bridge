@@ -197,3 +197,89 @@ Bridge.prototype.getInfo = function(callback) {
         return callback(null, info);
     }.bind(this));
 };
+
+Bridge.prototype.getIndexableDocs = function(pointer, callback) {
+    if (!this._map) return callback(new Error('Tilesource not loaded'));
+
+    pointer = pointer || {};
+    pointer.limit = pointer.limit || 10000;
+    pointer.offset = pointer.offset || 0;
+
+    var knownsrs = {
+        '+proj=merc +lon_0=0 +lat_ts=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs': '900913',
+        '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs': 'WGS84'
+    };
+
+    this.getInfo(function(err, info) {
+        if (err) return callback(err);
+        if (!info.maxzoom) return callback(new Error('No maxzoom defined'));
+        this._map.acquire(function(err, map) {
+            var name = (map.parameters.geocoder_layer||'').split('.').shift() || '';
+            var field = (map.parameters.geocoder_layer||'').split('.').pop() || '_text';
+            var layer = name
+                ? map.layers().filter(function(l) { return l.name === name })[0]
+                : map.layers()[0];
+
+            if (!layer) return callback(new Error('No geocoding layer found'));
+            if (!knownsrs[layer.srs]) return callback(new Error('Unknown layer SRS'));
+
+            var srs = knownsrs[layer.srs];
+            var featureset = layer.datasource.featureset();
+            var params = layer.datasource.parameters();
+            var docs = [];
+            var cache = {};
+            var i = 0;
+
+            function feature() {
+                if (i === pointer.offset + pointer.limit) {
+                    pointer.offset = pointer.offset + pointer.limit;
+                    return callback(null, docs, pointer);
+                }
+
+                var f = featureset.next();
+                if (!f) return callback(null, docs);
+
+                // Skip over features if not yet paged to offset.
+                if (i < pointer.offset) return ++i && feature();
+
+                var doc = f.attributes();
+                doc._id = f.id();
+                doc._text = doc[field] || '';
+                doc._zxy = [];
+                docs.push(doc);
+                var t = sm.xyz(f.extent(), info.maxzoom, false, srs);
+                var x = t.minX;
+                var y = t.minY;
+                var c = (t.maxX - t.minX + 1) * (t.maxY - t.minY + 1);
+                function tiles() {
+                    if (x > t.maxX && y > t.maxY) return ++i && feature();
+                    if (y > t.maxY && ++x) y = t.minY;
+                    var key = info.maxzoom + '/' + x + '/' + y;
+
+                    // Features must cover > 2 tiles to have false positives.
+                    if (c < 3 || cache[key]) {
+                        if (c < 3 || cache[key][doc._id]) doc._zxy.push(key);
+                        y++;
+                        return tiles();
+                    }
+
+                    cache[key] = {};
+                    var vtile = new mapnik.VectorTile(info.maxzoom, x, y);
+                    map.extent = sm.bbox(x,y,info.maxzoom,false,srs);
+                    map.render(vtile, {}, function(err, vtile) {
+                        if (err) return callback(err);
+                        var json = vtile.toJSON();
+                        json.forEach(function(l) {
+                            if (l.name !== layer.name) return;
+                            for (var i = 0; i < l.features.length; i++) cache[key][l.features[i].id] = true;
+                        });
+                        process.nextTick(function() { tiles() });
+                    });
+                }
+                tiles();
+            }
+            feature();
+        }.bind(this));
+    }.bind(this));
+};
+
