@@ -245,7 +245,7 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                 }
 
                 var f = featureset.next();
-                if (!f) return callback(null, docs);
+                if (!f) return callback(null, docs, pointer);
 
                 // Skip over features if not yet paged to offset.
                 if (i < pointer.offset) return ++i && feature();
