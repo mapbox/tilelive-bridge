@@ -22,34 +22,42 @@ if (process.platform !== 'win32') {
 module.exports = Bridge;
 
 function Bridge(uri, callback) {
+    var source = this;
+
     if (typeof uri === 'string' || (uri.protocol && !uri.xml)) {
         uri = typeof uri === 'string' ? url.parse(uri) : uri;
         uri.query = typeof uri.query === 'string' ? qs.parse(uri.query) : (uri.query || {});
         var filepath = path.resolve(uri.pathname);
-        return fs.readFile(filepath, 'utf8', function(err, xml) {
+        fs.readFile(filepath, 'utf8', function(err, xml) {
             if (err) return callback(err);
             var opts = Object.keys(uri.query).reduce(function(memo, key) {
                 memo[key] = !!parseInt(uri.query[key], 10);
                 return memo;
             }, {xml:xml, base:path.dirname(filepath)});
-            return new Bridge(opts, callback);
+            init(opts);
         });
+        return source;
+    } else {
+        init(uri);
+        return source;
     }
 
-    if (!uri.xml) return callback && callback(new Error('No xml'));
+    function init(uri) {
+        if (!uri.xml) return callback && callback(new Error('No xml'));
 
-    this._uri = uri;
-    this._deflate = typeof uri.deflate === 'boolean' ? uri.deflate : true;
-    this._base = path.resolve(uri.base || __dirname);
+        source._uri = uri;
+        source._deflate = typeof uri.deflate === 'boolean' ? uri.deflate : true;
+        source._base = path.resolve(uri.base || __dirname);
 
-    // 'blank' option forces all solid tiles to be interpreted as blank.
-    this._blank = typeof uri.blank === 'boolean' ? uri.blank : false;
+        // 'blank' option forces all solid tiles to be interpreted as blank.
+        source._blank = typeof uri.blank === 'boolean' ? uri.blank : false;
 
-    if (callback) this.once('open', callback);
+        if (callback) source.once('open', callback);
 
-    this.update(uri, function(err) {
-        this.emit('open', err, this);
-    }.bind(this));
+        source.update(uri, function(err) {
+            source.emit('open', err, source);
+        });
+    };
 };
 require('util').inherits(Bridge, require('events').EventEmitter);
 

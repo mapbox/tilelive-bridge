@@ -36,6 +36,18 @@ describe('init', function() {
             done();
         });
     });
+    it('should load with listener', function(done) {
+        var source = new Bridge('bridge://' + path.resolve(__dirname + '/test-a.xml'));
+        source.on('open', function(err) {
+            assert.ifError(err);
+            assert.ok(source);
+            assert.equal(source._blank, false);
+            assert.equal(source._deflate, true);
+            assert.equal(source._xml, xml.a);
+            assert.equal(source._base, __dirname);
+            done();
+        });
+    });
     it('should load query params', function(done) {
         new Bridge('bridge://' + path.resolve(__dirname + '/test-a.xml?blank=1&deflate=0'), function(err, source) {
             assert.ifError(err);
