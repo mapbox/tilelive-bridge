@@ -146,7 +146,7 @@ Bridge.prototype.getTile = function(z, x, y, callback) {
                         buffer.solid = '0,0,0,0';
                     // Fake a hex code by md5ing the key.
                     } else {
-                        var mockrgb = crypto.createHash('md5').update(key).digest('hex').substr(0,6);
+                        var mockrgb = crypto.createHash('md5').update(buffer).digest('hex').substr(0,6);
                         buffer.solid = [
                             parseInt(mockrgb.substr(0,2),16),
                             parseInt(mockrgb.substr(2,2),16),
