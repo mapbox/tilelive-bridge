@@ -133,19 +133,16 @@ Bridge.prototype.getTile = function(z, x, y, callback) {
                 var done = function(err, buffer) {
                     if (err) return callback(err);
                     if (solid === false) return callback(err, buffer, headers);
-                    // Use the null rgba string for blank solids.
-                    if (source._blank || !key) {
-                        buffer.solid = '0,0,0,0';
+                    // Empty tiles are equivalent to no tile.
+                    if (source._blank || !key) return callback(new Error('Tile does not exist'));
                     // Fake a hex code by md5ing the key.
-                    } else {
-                        var mockrgb = crypto.createHash('md5').update(buffer).digest('hex').substr(0,6);
-                        buffer.solid = [
-                            parseInt(mockrgb.substr(0,2),16),
-                            parseInt(mockrgb.substr(2,2),16),
-                            parseInt(mockrgb.substr(4,2),16),
-                            1
-                        ].join(',');
-                    }
+                    var mockrgb = crypto.createHash('md5').update(buffer).digest('hex').substr(0,6);
+                    buffer.solid = [
+                        parseInt(mockrgb.substr(0,2),16),
+                        parseInt(mockrgb.substr(2,2),16),
+                        parseInt(mockrgb.substr(4,2),16),
+                        1
+                    ].join(',');
                     return callback(err, buffer, headers);
                 };
                 // No deflate.
