@@ -133,9 +133,9 @@ describe('tiles', function() {
         c: new Bridge({ xml:xml.a, base:__dirname + '/', blank:false })
     };
     var tests = {
-        a: ['0.0.0', '1.0.0', '1.0.1', {key:'10.0.0',solid:'0,0,0,0'}, {key:'10.765.295',solid:'0,0,0,0'}],
+        a: ['0.0.0', '1.0.0', '1.0.1', {key:'10.0.0',empty:true}, {key:'10.765.295',empty:true}],
         b: ['0.0.0'],
-        c: [{key:'10.0.0',solid:'0,0,0,0'}, {key:'10.765.295', solid:'46,254,34,1'}]
+        c: [{key:'10.0.0',empty:true}, {key:'10.765.295', solid:'46,254,34,1'}]
     };
     Object.keys(tests).forEach(function(source) {
         before(function(done) { sources[source].open(done); });
@@ -148,6 +148,12 @@ describe('tiles', function() {
             var y = key.split('.')[2] | 0;
             it('should render ' + source + ' (' + key + ')', function(done) {
                 sources[source].getTile(z,x,y, function(err, buffer, headers) {
+                    // Test that empty tiles are so.
+                    if (obj.empty) {
+                        assert.equal(err.message, 'Tile does not exist');
+                        return done();
+                    }
+
                     assert.ifError(err);
                     assert.equal(headers['Content-Type'], 'application/x-protobuf');
                     assert.equal(headers['Content-Encoding'], source !== 'b' ? 'deflate' : undefined);
