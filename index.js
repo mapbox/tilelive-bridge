@@ -249,7 +249,9 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                 }
 
                 // Skip over features if not yet paged to offset.
-                if (i < pointer.offset) return ++i && feature();
+                if (i < pointer.offset) return ++i && process.nextTick(function() {
+                    feature();
+                });
 
                 var doc = f.attributes();
                 doc._id = f.id();
@@ -261,7 +263,9 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                 var y = t.minY;
                 var c = (t.maxX - t.minX + 1) * (t.maxY - t.minY + 1);
                 function tiles() {
-                    if (x > t.maxX && y > t.maxY) return ++i && feature();
+                    if (x > t.maxX && y > t.maxY) return ++i && process.nextTick(function() {
+                        feature();
+                    });
                     if (y > t.maxY && ++x) y = t.minY;
                     var key = info.maxzoom + '/' + x + '/' + y;
 
