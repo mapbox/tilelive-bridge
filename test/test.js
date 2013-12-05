@@ -36,6 +36,18 @@ describe('init', function() {
             done();
         });
     });
+    it('should load with listener', function(done) {
+        var source = new Bridge('bridge://' + path.resolve(__dirname + '/test-a.xml'));
+        source.on('open', function(err) {
+            assert.ifError(err);
+            assert.ok(source);
+            assert.equal(source._blank, false);
+            assert.equal(source._deflate, true);
+            assert.equal(source._xml, xml.a);
+            assert.equal(source._base, __dirname);
+            done();
+        });
+    });
     it('should load query params', function(done) {
         new Bridge('bridge://' + path.resolve(__dirname + '/test-a.xml?blank=1&deflate=0'), function(err, source) {
             assert.ifError(err);
@@ -176,3 +188,49 @@ describe('tiles', function() {
     });
 });
 
+describe('getIndexableDocs', function() {
+    var source;
+    before(function(done) {
+        new Bridge({ xml:xml.a, base:__dirname + '/', blank:true }, function(err, s) {
+            if (err) return done(err);
+            source = s;
+            done();
+        });
+    });
+    it ('indexes', function(done) {
+        this.timeout(8000);
+        source.getIndexableDocs({ limit:10 }, function(err, docs, pointer) {
+            assert.ifError(err);
+            assert.deepEqual({offset:10, limit:10}, pointer);
+            assert.deepEqual([
+                'Antigua and Barbuda',
+                'Algeria',
+                'Azerbaijan',
+                'Albania',
+                'Armenia',
+                'Angola',
+                'American Samoa',
+                'Argentina',
+                'Australia',
+                'Bahrain'
+            ], docs.map(function(d) { return d.NAME }));
+            source.getIndexableDocs(pointer, function(err, docs, pointer) {
+                assert.ifError(err);
+                assert.deepEqual({offset:20, limit:10}, pointer);
+                assert.deepEqual([
+                    'Barbados',
+                    'Bermuda',
+                    'Bahamas',
+                    'Bangladesh',
+                    'Belize',
+                    'Bosnia and Herzegovina',
+                    'Bolivia',
+                    'Burma',
+                    'Benin',
+                    'Solomon Islands'
+                ], docs.map(function(d) { return d.NAME }));
+                done();
+            });
+        });
+    });
+});

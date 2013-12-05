@@ -22,34 +22,42 @@ if (process.platform !== 'win32') {
 module.exports = Bridge;
 
 function Bridge(uri, callback) {
+    var source = this;
+
     if (typeof uri === 'string' || (uri.protocol && !uri.xml)) {
         uri = typeof uri === 'string' ? url.parse(uri) : uri;
         uri.query = typeof uri.query === 'string' ? qs.parse(uri.query) : (uri.query || {});
         var filepath = path.resolve(uri.pathname);
-        return fs.readFile(filepath, 'utf8', function(err, xml) {
+        fs.readFile(filepath, 'utf8', function(err, xml) {
             if (err) return callback(err);
             var opts = Object.keys(uri.query).reduce(function(memo, key) {
                 memo[key] = !!parseInt(uri.query[key], 10);
                 return memo;
             }, {xml:xml, base:path.dirname(filepath)});
-            return new Bridge(opts, callback);
+            init(opts);
         });
+        return source;
+    } else {
+        init(uri);
+        return source;
     }
 
-    if (!uri.xml) return callback && callback(new Error('No xml'));
+    function init(uri) {
+        if (!uri.xml) return callback && callback(new Error('No xml'));
 
-    this._uri = uri;
-    this._deflate = typeof uri.deflate === 'boolean' ? uri.deflate : true;
-    this._base = path.resolve(uri.base || __dirname);
+        source._uri = uri;
+        source._deflate = typeof uri.deflate === 'boolean' ? uri.deflate : true;
+        source._base = path.resolve(uri.base || __dirname);
 
-    // 'blank' option forces all solid tiles to be interpreted as blank.
-    this._blank = typeof uri.blank === 'boolean' ? uri.blank : false;
+        // 'blank' option forces all solid tiles to be interpreted as blank.
+        source._blank = typeof uri.blank === 'boolean' ? uri.blank : false;
 
-    if (callback) this.once('open', callback);
+        if (callback) source.once('open', callback);
 
-    this.update(uri, function(err) {
-        this.emit('open', err, this);
-    }.bind(this));
+        source.update(uri, function(err) {
+            source.emit('open', err, source);
+        });
+    };
 };
 require('util').inherits(Bridge, require('events').EventEmitter);
 
@@ -194,3 +202,93 @@ Bridge.prototype.getInfo = function(callback) {
         return callback(null, info);
     }.bind(this));
 };
+
+Bridge.prototype.getIndexableDocs = function(pointer, callback) {
+    if (!this._map) return callback(new Error('Tilesource not loaded'));
+
+    pointer = pointer || {};
+    pointer.limit = pointer.limit || 10000;
+    pointer.offset = pointer.offset || 0;
+
+    var knownsrs = {
+        '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over': '900913',
+        '+proj=merc +lon_0=0 +lat_ts=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs': '900913',
+        '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs': 'WGS84'
+    };
+
+    this.getInfo(function(err, info) {
+        if (err) return callback(err);
+        if (!info.maxzoom) return callback(new Error('No maxzoom defined'));
+        this._map.acquire(function(err, map) {
+            var name = (map.parameters.geocoder_layer||'').split('.').shift() || '';
+            var field = (map.parameters.geocoder_layer||'').split('.').pop() || '_text';
+            var layer = name
+                ? map.layers().filter(function(l) { return l.name === name })[0]
+                : map.layers()[0];
+
+            if (!layer) return callback(new Error('No geocoding layer found'));
+            if (!knownsrs[layer.srs]) return callback(new Error('Unknown layer SRS'));
+
+            var srs = knownsrs[layer.srs];
+            var featureset = layer.datasource.featureset();
+            var params = layer.datasource.parameters();
+            var docs = [];
+            var cache = {};
+            var i = 0;
+
+            function feature() {
+                if (i === pointer.offset + pointer.limit) {
+                    pointer.offset = pointer.offset + pointer.limit;
+                    return callback(null, docs, pointer);
+                }
+
+                var f = featureset.next();
+                if (!f) {
+                    pointer.offset = i;
+                    return callback(null, docs, pointer);
+                }
+
+                // Skip over features if not yet paged to offset.
+                if (i < pointer.offset) return ++i && feature();
+
+                var doc = f.attributes();
+                doc._id = f.id();
+                doc._text = doc[field] || '';
+                doc._zxy = [];
+                docs.push(doc);
+                var t = sm.xyz(f.extent(), info.maxzoom, false, srs);
+                var x = t.minX;
+                var y = t.minY;
+                var c = (t.maxX - t.minX + 1) * (t.maxY - t.minY + 1);
+                function tiles() {
+                    if (x > t.maxX && y > t.maxY) return ++i && feature();
+                    if (y > t.maxY && ++x) y = t.minY;
+                    var key = info.maxzoom + '/' + x + '/' + y;
+
+                    // Features must cover > 2 tiles to have false positives.
+                    if (c < 3 || cache[key]) {
+                        if (c < 3 || cache[key][doc._id]) doc._zxy.push(key);
+                        y++;
+                        return tiles();
+                    }
+
+                    cache[key] = {};
+                    var vtile = new mapnik.VectorTile(info.maxzoom, x, y);
+                    map.extent = sm.bbox(x,y,info.maxzoom,false,srs);
+                    map.render(vtile, {}, function(err, vtile) {
+                        if (err) return callback(err);
+                        var json = vtile.toJSON();
+                        json.forEach(function(l) {
+                            if (l.name !== layer.name) return;
+                            for (var i = 0; i < l.features.length; i++) cache[key][l.features[i].id] = true;
+                        });
+                        process.nextTick(function() { tiles() });
+                    });
+                }
+                tiles();
+            }
+            feature();
+        }.bind(this));
+    }.bind(this));
+};
+
