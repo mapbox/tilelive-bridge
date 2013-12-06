@@ -277,9 +277,8 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                     }
 
                     cache[key] = {};
-                    var vtile = new mapnik.VectorTile(info.maxzoom, x, y);
-                    map.extent = sm.bbox(x,y,info.maxzoom,false,srs);
-                    map.render(vtile, {}, function(err, vtile) {
+                    map.extent = sm.bbox(x,y,info.maxzoom,false,'900913');
+                    map.render(new mapnik.VectorTile(info.maxzoom,x,y), {}, function(err, vtile) {
                         if (err) return callback(err);
                         var json = vtile.toJSON();
                         json.forEach(function(l) {
