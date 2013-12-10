@@ -219,17 +219,18 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
 
     source.getInfo(function(err, info) {
         if (err) return callback(err);
-        if (!info.maxzoom) return callback(new Error('No maxzoom defined'));
         source._map.acquire(function(err, map) {
             if (err) return callback(err);
             process.nextTick(function() { source._map.release(map) });
 
             var name = (map.parameters.geocoder_layer||'').split('.').shift() || '';
             var field = (map.parameters.geocoder_layer||'').split('.').pop() || '_text';
+            var zoom = info.maxzoom + parseInt(map.parameters.geocoder_resolution||0, 10);
             var layer = name
                 ? map.layers().filter(function(l) { return l.name === name })[0]
                 : map.layers()[0];
 
+            if (!zoom) return callback(new Error('No geocoding zoom defined'));
             if (!layer) return callback(new Error('No geocoding layer found'));
             if (!knownsrs[layer.srs]) return callback(new Error('Unknown layer SRS'));
 
@@ -262,7 +263,7 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                 doc._text = doc[field] || '';
                 doc._zxy = [];
                 docs.push(doc);
-                var t = sm.xyz(f.extent(), info.maxzoom, false, srs);
+                var t = sm.xyz(f.extent(), zoom, false, srs);
                 var x = t.minX;
                 var y = t.minY;
                 var c = (t.maxX - t.minX + 1) * (t.maxY - t.minY + 1);
@@ -271,7 +272,7 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                         feature();
                     });
                     if (y > t.maxY && ++x) y = t.minY;
-                    var key = info.maxzoom + '/' + x + '/' + y;
+                    var key = zoom + '/' + x + '/' + y;
 
                     // Features must cover > 2 tiles to have false positives.
                     if (c < 3 || cache[key]) {
@@ -281,8 +282,8 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                     }
 
                     cache[key] = {};
-                    map.extent = sm.bbox(x,y,info.maxzoom,false,'900913');
-                    map.render(new mapnik.VectorTile(info.maxzoom,x,y), {}, function(err, vtile) {
+                    map.extent = sm.bbox(x,y,zoom,false,'900913');
+                    map.render(new mapnik.VectorTile(zoom,x,y), {}, function(err, vtile) {
                         if (err) return callback(err);
                         var json = vtile.toJSON();
                         json.forEach(function(l) {
