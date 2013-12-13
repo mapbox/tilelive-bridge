@@ -1,5 +1,10 @@
 # Changlog
 
+## 0.0.6
+
+ - Adds support for carmen (dev) getIndexableDocs method.
+ - Fixes tile solid handling.
+
 ## 0.0.5
 
  - Flipped default handling of solid tiles from blank: true to blank: false.
