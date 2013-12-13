@@ -214,6 +214,29 @@ describe('getIndexableDocs', function() {
                 'Australia',
                 'Bahrain'
             ], docs.map(function(d) { return d.NAME }));
+            assert.deepEqual({
+                AREA: 44,
+                FIPS: 'AC',
+                ISO2: 'AG',
+                ISO3: 'ATG',
+                LAT: 17.078,
+                LON: -61.783,
+                NAME: 'Antigua and Barbuda',
+                POP2005: 83039,
+                REGION: 19,
+                SUBREGION: 29,
+                UN: 28,
+                _id: 1,
+                _zxy: [ '8/83/115', '8/84/115', '8/85/115' ],
+                _text: 'Antigua and Barbuda',
+                _bbox: [
+                    -61.88722200000002,
+                    17.02444100000014,
+                    -61.68666800000004,
+                    17.703888000000063
+                ],
+                _center: [ -61.78694500000003, 17.3641645000001 ]
+            }, docs[0]);
             source.getIndexableDocs(pointer, function(err, docs, pointer) {
                 assert.ifError(err);
                 assert.deepEqual({offset:20, limit:10}, pointer);

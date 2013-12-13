@@ -223,7 +223,8 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
             if (err) return callback(err);
             process.nextTick(function() { source._map.release(map) });
 
-            var name = map.parameters.geocoder_layer;
+            var name = (map.parameters.geocoder_layer||'').split('.').shift() || '';
+            var field = (map.parameters.geocoder_layer||'').split('.').pop() || '_text';
             var zoom = info.maxzoom + parseInt(map.parameters.geocoder_resolution||0, 10);
             var layer = name
                 ? map.layers().filter(function(l) { return l.name === name })[0]
@@ -258,14 +259,12 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                 });
 
                 var doc = f.attributes();
-                if (!doc._text || !doc._center) return ++i && process.nextTick(function() {
+                if (!doc[field]) return ++i && process.nextTick(function() {
                     feature();
                 });
                 doc._id = f.id();
                 doc._zxy = [];
-                doc._center = doc._center.split(',');
-                doc._center[0] = parseFloat(doc._center[0]);
-                doc._center[1] = parseFloat(doc._center[1]);
+                doc._text = doc[field];
                 if (typeof doc._bbox === 'string') {
                     doc._bbox = doc._bbox.split(',');
                     doc._bbox[0] = parseFloat(doc._bbox[0]);
@@ -274,6 +273,16 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                     doc._bbox[3] = parseFloat(doc._bbox[3]);
                 } else {
                     doc._bbox = doc._bbox || (srs === 'WGS84' ? f.extent() : sm.convert(f.extent(), 'WGS84'));
+                }
+                if (typeof doc._center === 'string') {
+                    doc._center = doc._center.split(',');
+                    doc._center[0] = parseFloat(doc._center[0]);
+                    doc._center[1] = parseFloat(doc._center[1]);
+                } else {
+                    doc._center = [
+                        doc._bbox[0] + (doc._bbox[2]-doc._bbox[0])*0.5,
+                        doc._bbox[1] + (doc._bbox[3]-doc._bbox[1])*0.5
+                    ];
                 }
                 if (doc._bbox[0] === doc._bbox[2]) delete doc._bbox;
                 docs.push(doc);
