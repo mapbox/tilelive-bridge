@@ -223,8 +223,7 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
             if (err) return callback(err);
             process.nextTick(function() { source._map.release(map) });
 
-            var name = (map.parameters.geocoder_layer||'').split('.').shift() || '';
-            var field = (map.parameters.geocoder_layer||'').split('.').pop() || '_text';
+            var name = map.parameters.geocoder_layer;
             var zoom = info.maxzoom + parseInt(map.parameters.geocoder_resolution||0, 10);
             var layer = name
                 ? map.layers().filter(function(l) { return l.name === name })[0]
@@ -259,9 +258,24 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                 });
 
                 var doc = f.attributes();
+                if (!doc._text || !doc._center) return ++i && process.nextTick(function() {
+                    feature();
+                });
                 doc._id = f.id();
-                doc._text = doc[field] || '';
                 doc._zxy = [];
+                doc._center = doc._center.split(',');
+                doc._center[0] = parseFloat(doc._center[0]);
+                doc._center[1] = parseFloat(doc._center[1]);
+                if (typeof doc._bbox === 'string') {
+                    doc._bbox = doc._bbox.split(',');
+                    doc._bbox[0] = parseFloat(doc._bbox[0]);
+                    doc._bbox[1] = parseFloat(doc._bbox[1]);
+                    doc._bbox[2] = parseFloat(doc._bbox[2]);
+                    doc._bbox[3] = parseFloat(doc._bbox[3]);
+                } else {
+                    doc._bbox = doc._bbox || (srs === 'WGS84' ? f.extent() : sm.convert(f.extent(), 'WGS84'));
+                }
+                if (doc._bbox[0] === doc._bbox[2]) delete doc._bbox;
                 docs.push(doc);
                 var t = sm.xyz(f.extent(), zoom, false, srs);
                 var x = t.minX;
