@@ -210,22 +210,27 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
     pointer.limit = pointer.limit || 10000;
     pointer.offset = pointer.offset || 0;
 
+    var source = this;
     var knownsrs = {
         '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over': '900913',
         '+proj=merc +lon_0=0 +lat_ts=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs': '900913',
         '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs': 'WGS84'
     };
 
-    this.getInfo(function(err, info) {
+    source.getInfo(function(err, info) {
         if (err) return callback(err);
-        if (!info.maxzoom) return callback(new Error('No maxzoom defined'));
-        this._map.acquire(function(err, map) {
+        source._map.acquire(function(err, map) {
+            if (err) return callback(err);
+            process.nextTick(function() { source._map.release(map) });
+
             var name = (map.parameters.geocoder_layer||'').split('.').shift() || '';
             var field = (map.parameters.geocoder_layer||'').split('.').pop() || '_text';
+            var zoom = info.maxzoom + parseInt(map.parameters.geocoder_resolution||0, 10);
             var layer = name
                 ? map.layers().filter(function(l) { return l.name === name })[0]
                 : map.layers()[0];
 
+            if (!zoom) return callback(new Error('No geocoding zoom defined'));
             if (!layer) return callback(new Error('No geocoding layer found'));
             if (!knownsrs[layer.srs]) return callback(new Error('Unknown layer SRS'));
 
@@ -254,11 +259,34 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                 });
 
                 var doc = f.attributes();
+                if (!doc[field]) return ++i && process.nextTick(function() {
+                    feature();
+                });
                 doc._id = f.id();
-                doc._text = doc[field] || '';
                 doc._zxy = [];
+                doc._text = doc[field];
+                if (typeof doc._bbox === 'string') {
+                    doc._bbox = doc._bbox.split(',');
+                    doc._bbox[0] = parseFloat(doc._bbox[0]);
+                    doc._bbox[1] = parseFloat(doc._bbox[1]);
+                    doc._bbox[2] = parseFloat(doc._bbox[2]);
+                    doc._bbox[3] = parseFloat(doc._bbox[3]);
+                } else {
+                    doc._bbox = doc._bbox || (srs === 'WGS84' ? f.extent() : sm.convert(f.extent(), 'WGS84'));
+                }
+                if (typeof doc._center === 'string') {
+                    doc._center = doc._center.split(',');
+                    doc._center[0] = parseFloat(doc._center[0]);
+                    doc._center[1] = parseFloat(doc._center[1]);
+                } else {
+                    doc._center = [
+                        doc._bbox[0] + (doc._bbox[2]-doc._bbox[0])*0.5,
+                        doc._bbox[1] + (doc._bbox[3]-doc._bbox[1])*0.5
+                    ];
+                }
+                if (doc._bbox[0] === doc._bbox[2]) delete doc._bbox;
                 docs.push(doc);
-                var t = sm.xyz(f.extent(), info.maxzoom, false, srs);
+                var t = sm.xyz(f.extent(), zoom, false, srs);
                 var x = t.minX;
                 var y = t.minY;
                 var c = (t.maxX - t.minX + 1) * (t.maxY - t.minY + 1);
@@ -267,7 +295,7 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                         feature();
                     });
                     if (y > t.maxY && ++x) y = t.minY;
-                    var key = info.maxzoom + '/' + x + '/' + y;
+                    var key = zoom + '/' + x + '/' + y;
 
                     // Features must cover > 2 tiles to have false positives.
                     if (c < 3 || cache[key]) {
@@ -277,8 +305,8 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                     }
 
                     cache[key] = {};
-                    map.extent = sm.bbox(x,y,info.maxzoom,false,'900913');
-                    map.render(new mapnik.VectorTile(info.maxzoom,x,y), {}, function(err, vtile) {
+                    map.extent = sm.bbox(x,y,zoom,false,'900913');
+                    map.render(new mapnik.VectorTile(zoom,x,y), {}, function(err, vtile) {
                         if (err) return callback(err);
                         var json = vtile.toJSON();
                         json.forEach(function(l) {
@@ -291,7 +319,7 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                 tiles();
             }
             feature();
-        }.bind(this));
-    }.bind(this));
+        });
+    });
 };
 
