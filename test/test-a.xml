@@ -8,6 +8,7 @@
   <Parameter name="minzoom">0</Parameter>
   <Parameter name="maxzoom">8</Parameter>
   <Parameter name="geocoder_layer">world.NAME</Parameter>
+  <Parameter name="geocoder_resolution">0</Parameter>
   <Parameter name="name"><![CDATA[test-a]]></Parameter>
   <Parameter name="json"><![CDATA[{"level1":{"level2":"property"},"minzoom":2}]]></Parameter>
 </Parameters>

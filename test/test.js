@@ -76,6 +76,8 @@ describe('init', function() {
                 assert.equal('test-a', info.name);
                 assert.equal(0, info.minzoom);
                 assert.equal(8, info.maxzoom);
+                assert.equal(0, info.geocoder_resolution);
+                assert.equal(1, info.geocoder_shardlevel);
                 assert.deepEqual([0,0,2], info.center);
                 assert.deepEqual([-180,-85.0511,180,85.0511], info.bounds);
                 assert.deepEqual({"level2":"property"}, info.level1, 'JSON key stores deep attribute data');

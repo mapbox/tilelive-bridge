@@ -189,6 +189,8 @@ Bridge.prototype.getInfo = function(callback) {
                 break;
             case 'minzoom':
             case 'maxzoom':
+            case 'geocoder_shardlevel':
+            case 'geocoder_resolution':
                 memo[key] = parseInt(params[key], 10);
                 break;
             default:
@@ -197,6 +199,19 @@ Bridge.prototype.getInfo = function(callback) {
             }
             return memo;
         }, {});
+
+        // Set an intelligent default for geocoder_shardlevel if not set.
+        if (info.geocoder_layer && !('geocoder_shardlevel' in info)) {
+            if (info.maxzoom > 12) {
+                info.geocoder_shardlevel = 3;
+            } else if (info.maxzoom > 8) {
+                info.geocoder_shardlevel = 2;
+            } else if (info.maxzoom > 6) {
+                info.geocoder_shardlevel = 1;
+            } else {
+                info.geocoder_shardlevel = 0;
+            }
+        }
 
         process.nextTick(function() { this._map.release(map); }.bind(this));
         return callback(null, info);
