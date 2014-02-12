@@ -7,6 +7,7 @@ var Pool = require('generic-pool').Pool;
 var fs = require('fs');
 var qs = require('querystring');
 var sm = new (require('sphericalmercator'));
+var immediate = global.setImmediate || process.nextTick;
 
 if (process.platform !== 'win32') {
     var major_version = parseInt(process.versions.node.split('.')[0],10);
@@ -94,7 +95,7 @@ Bridge.prototype.update = function(opts, callback) {
             max: require('os').cpus().length
         });
         // If no nextTick the stale pool can be used to acquire new maps.
-        return process.nextTick(function() {
+        return immediate(function() {
             this._map.destroyAllNow(callback);
         }.bind(this));
     }
@@ -131,7 +132,7 @@ Bridge.prototype.getTile = function(z, x, y, callback) {
         // https://github.com/mapnik/node-mapnik/issues/175
         opts.buffer_size = map.bufferSize;
         map.render(new mapnik.VectorTile(+z,+x,+y), opts, function(err, image) {
-            process.nextTick(function() { source._map.release(map); });
+            immediate(function() { source._map.release(map); });
 
             if (err) return callback(err);
             // Fake empty RGBA to the rest of the tilelive API for now.
@@ -213,7 +214,7 @@ Bridge.prototype.getInfo = function(callback) {
             }
         }
 
-        process.nextTick(function() { this._map.release(map); }.bind(this));
+        immediate(function() { this._map.release(map); }.bind(this));
         return callback(null, info);
     }.bind(this));
 };
@@ -236,7 +237,7 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
         if (err) return callback(err);
         source._map.acquire(function(err, map) {
             if (err) return callback(err);
-            process.nextTick(function() { source._map.release(map) });
+            immediate(function() { source._map.release(map) });
 
             var name = (map.parameters.geocoder_layer||'').split('.').shift() || '';
             var field = (map.parameters.geocoder_layer||'').split('.').pop() || '_text';
@@ -269,12 +270,12 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                 }
 
                 // Skip over features if not yet paged to offset.
-                if (i < pointer.offset) return ++i && process.nextTick(function() {
+                if (i < pointer.offset) return ++i && immediate(function() {
                     feature();
                 });
 
                 var doc = f.attributes();
-                if (!doc[field]) return ++i && process.nextTick(function() {
+                if (!doc[field]) return ++i && immediate(function() {
                     feature();
                 });
                 doc._id = f.id();
@@ -306,7 +307,7 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                 var y = t.minY;
                 var c = (t.maxX - t.minX + 1) * (t.maxY - t.minY + 1);
                 function tiles() {
-                    if (x > t.maxX && y > t.maxY) return ++i && process.nextTick(function() {
+                    if (x > t.maxX && y > t.maxY) return ++i && immediate(function() {
                         feature();
                     });
                     if (y > t.maxY && ++x) y = t.minY;
@@ -328,7 +329,7 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                             if (l.name !== layer.name) return;
                             for (var i = 0; i < l.features.length; i++) cache[key][l.features[i].id] = true;
                         });
-                        process.nextTick(function() { tiles() });
+                        immediate(function() { tiles() });
                     });
                 }
                 tiles();
