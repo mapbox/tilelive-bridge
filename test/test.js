@@ -174,14 +174,18 @@ describe('tiles', function() {
                     if (headers['Content-Encoding'] == 'deflate') {
                         zlib.inflate(expected,function(err,expected_inflated) {
                             vtile1.setData(expected_inflated);
+                            vtile1.parse();
                             zlib.inflate(buffer,function(err,buffer_inflated) {
                                 vtile2.setData(buffer_inflated);
+                                vtile2.parse();
                                 compare_vtiles(filepath,vtile1,vtile2);
                             });
                         });
                     } else {
                         vtile1.setData(expected);
+                        vtile1.parse();
                         vtile2.setData(buffer);
+                        vtile2.parse();
                         compare_vtiles(filepath,vtile1,vtile2);
                     }
                     assert.equal(expected.length, buffer.length);
