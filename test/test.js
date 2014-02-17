@@ -5,9 +5,6 @@ var fs = require('fs');
 var mapnik = require('mapnik');
 var zlib = require('zlib');
 
-// Register datasource plugins
-mapnik.register_default_input_plugins()
-
 // Load fixture data.
 var xml = {
     a: fs.readFileSync(path.resolve(__dirname + '/test-a.xml'), 'utf8'),
