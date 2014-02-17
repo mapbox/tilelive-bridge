@@ -9,6 +9,9 @@ var qs = require('querystring');
 var sm = new (require('sphericalmercator'));
 var immediate = global.setImmediate || process.nextTick;
 
+// Register datasource plugins
+mapnik.register_default_input_plugins()
+
 if (process.platform !== 'win32') {
     var major_version = parseInt(process.versions.node.split('.')[0],10);
     var minor_version = parseInt(process.versions.node.split('.')[1],10);
