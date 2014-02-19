@@ -1,5 +1,9 @@
 # Changlog
 
+## 0.1.0
+
+ - Update to node-mapnik 1.3.x series.
+
 ## 0.0.6
 
  - Adds support for carmen (dev) getIndexableDocs method.
