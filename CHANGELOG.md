@@ -1,5 +1,9 @@
 # Changlog
 
+## 0.2.0
+
+ - Update to node-mapnik 1.4.x binaries! \o/
+
 ## 0.1.0
 
  - Update to node-mapnik 1.3.x series.
