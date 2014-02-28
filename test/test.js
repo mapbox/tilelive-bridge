@@ -137,7 +137,7 @@ describe('tiles', function() {
     var tests = {
         a: ['0.0.0', '1.0.0', '1.0.1', {key:'10.0.0',empty:true}, {key:'10.765.295',empty:true}],
         b: ['0.0.0'],
-        c: [{key:'10.0.0',empty:true}, {key:'10.765.295', solid:'46,254,34,1'}]
+        c: [{key:'10.0.0',empty:true}, {key:'10.765.295', solid:'34,85,63,1'}]
     };
     Object.keys(tests).forEach(function(source) {
         before(function(done) { sources[source].open(done); });
