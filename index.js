@@ -12,17 +12,6 @@ var immediate = global.setImmediate || process.nextTick;
 // Register datasource plugins
 mapnik.register_default_input_plugins()
 
-if (process.platform !== 'win32') {
-    var major_version = parseInt(process.versions.node.split('.')[0],10);
-    var minor_version = parseInt(process.versions.node.split('.')[1],10);
-    // older node versions support eio, newer need UV_THREADPOOL_SIZE set
-    if (major_version == 0 && minor_version < 9) {
-        // Increase number of threads to 1.5x the number of logical CPUs.
-        var threads = Math.ceil(Math.max(4, require('os').cpus().length * 1.5));
-        require('eio').setMinParallel(threads);
-    }
-}
-
 module.exports = Bridge;
 
 function Bridge(uri, callback) {
