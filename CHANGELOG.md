@@ -1,5 +1,10 @@
 # Changlog
 
+## 0.3.0
+
+ - Loosen node-mapnik semver to any ~1.4.0 version
+ - Drop eio in favor of node 0.10+ UV_THREADPOOL_SIZE
+
 ## 0.2.0
 
  - Update to node-mapnik 1.4.x binaries! \o/
