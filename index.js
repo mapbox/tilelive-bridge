@@ -70,6 +70,8 @@ Bridge.prototype.open = function(callback) {
 Bridge.prototype.update = function(opts, callback) {
     // If the XML has changed update the map.
     if (opts.xml && this._xml !== opts.xml) {
+        // Unset maxzoom. Will be re-set on first getTile.
+        this._maxzoom = undefined;
         this._xml = opts.xml;
         this._map = this._map || Pool({
             create: function(callback) {
@@ -106,9 +108,14 @@ Bridge.prototype.getTile = function(z, x, y, callback) {
     source._map.acquire(function(err, map) {
         if (err) return callback(err);
 
+        // set source _maxzoom cache to prevent repeat calls to map.parameters
+        if (source._maxzoom === undefined) {
+            source._maxzoom = map.parameters.maxzoom ? parseInt(map.parameters.maxzoom, 10) : 14;
+        }
+
         var opts = {};
-        // higher value more coordinates will be skipped
-        opts.tolerance = Math.max(0, Math.min(5, 14-z));
+        // use tolerance of 32 for zoom levels below max
+        opts.tolerance = z < source._maxzoom ? 32 : 0;
         // make larger than zero to enable
         opts.simplify = 0;
         // 'radial-distance', 'visvalingam-whyatt', 'zhao-saalfeld' (default)
