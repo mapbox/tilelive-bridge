@@ -1,5 +1,9 @@
 # Changlog
 
+## 0.4.0
+
+ - Adjust tolerance from sliding scale to constant 32 until maxzoom is reached
+
 ## 0.3.0
 
  - Loosen node-mapnik semver to any ~1.4.0 version
