@@ -3,14 +3,15 @@ var path = require('path');
 var zlib = require('zlib');
 var crypto = require('crypto');
 var mapnik = require('mapnik');
-var Pool = require('generic-pool').Pool;
 var fs = require('fs');
 var qs = require('querystring');
-var sm = new (require('sphericalmercator'));
+var sm = new (require('sphericalmercator'))();
 var immediate = global.setImmediate || process.nextTick;
 
 // Register datasource plugins
-mapnik.register_default_input_plugins()
+mapnik.register_default_input_plugins();
+
+var mapnikPool = require('mapnik-pool')(mapnik);
 
 module.exports = Bridge;
 
@@ -50,8 +51,8 @@ function Bridge(uri, callback) {
         source.update(uri, function(err) {
             source.emit('open', err, source);
         });
-    };
-};
+    }
+}
 require('util').inherits(Bridge, require('events').EventEmitter);
 
 Bridge.registerProtocols = function(tilelive) {
@@ -73,21 +74,9 @@ Bridge.prototype.update = function(opts, callback) {
         // Unset maxzoom. Will be re-set on first getTile.
         this._maxzoom = undefined;
         this._xml = opts.xml;
-        this._map = this._map || Pool({
-            create: function(callback) {
-                var map = new mapnik.Map(256, 256);
-                map.fromString(this._xml, {
-                    strict:false,
-                    base:this._base + '/'
-                }, function(err) {
-                    if (err) return callback(err);
-                    map.bufferSize = 256;
-                    return callback(err, map);
-                });
-            }.bind(this),
-            destroy: function(map) { delete map; },
-            max: require('os').cpus().length
-        });
+        this._map = mapnikPool.fromString(this._xml,
+            { size: 256, bufferSize: 256 },
+            { strict: false, base: this._base + '/' });
         // If no nextTick the stale pool can be used to acquire new maps.
         return immediate(function() {
             this._map.destroyAllNow(callback);
@@ -119,7 +108,7 @@ Bridge.prototype.getTile = function(z, x, y, callback) {
         // make larger than zero to enable
         opts.simplify = 0;
         // 'radial-distance', 'visvalingam-whyatt', 'zhao-saalfeld' (default)
-        opts.simplify_algorithm = 'radial-distance'
+        opts.simplify_algorithm = 'radial-distance';
 
         var headers = {};
         headers['Content-Type'] = 'application/x-protobuf';
@@ -176,12 +165,14 @@ Bridge.prototype.getInfo = function(callback) {
             // enables nested properties and non-string datatypes to be
             // captured by mapnik XML.
             case 'json':
-                try { var jsondata = JSON.parse(params[key]); }
+                try {
+                    var jsondata = JSON.parse(params[key]);
+                    Object.keys(jsondata).reduce(function(memo, key) {
+                        memo[key] = memo[key] || jsondata[key];
+                        return memo;
+                    }, memo);
+                }
                 catch (err) { return callback(err); }
-                Object.keys(jsondata).reduce(function(memo, key) {
-                    memo[key] = memo[key] || jsondata[key];
-                    return memo;
-                }, memo);
                 break;
             case 'bounds':
             case 'center':
@@ -236,14 +227,14 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
         if (err) return callback(err);
         source._map.acquire(function(err, map) {
             if (err) return callback(err);
-            immediate(function() { source._map.release(map) });
+            immediate(function() { source._map.release(map); });
 
             var name = (map.parameters.geocoder_layer||'').split('.').shift() || '';
             var field = (map.parameters.geocoder_layer||'').split('.').pop() || '_text';
             var zoom = info.maxzoom + parseInt(map.parameters.geocoder_resolution||0, 10);
-            var layer = name
-                ? map.layers().filter(function(l) { return l.name === name })[0]
-                : map.layers()[0];
+            var layer = name ?
+                map.layers().filter(function(l) { return l.name === name })[0] :
+                map.layers()[0];
 
             if (!zoom) return callback(new Error('No geocoding zoom defined'));
             if (!layer) return callback(new Error('No geocoding layer found'));
@@ -306,10 +297,14 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                 var y = t.minY;
                 var c = (t.maxX - t.minX + 1) * (t.maxY - t.minY + 1);
                 function tiles() {
-                    if (x > t.maxX && y > t.maxY) return ++i && immediate(function() {
-                        feature();
-                    });
-                    if (y > t.maxY && ++x) y = t.minY;
+                    if (x > t.maxX && y > t.maxY) {
+                        return ++i && immediate(function() {
+                            feature();
+                        });
+                    }
+                    if (y > t.maxY && ++x) {
+                        y = t.minY;
+                    }
                     var key = zoom + '/' + x + '/' + y;
 
                     // Features must cover > 2 tiles to have false positives.
@@ -326,9 +321,11 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                         var json = vtile.toJSON();
                         json.forEach(function(l) {
                             if (l.name !== layer.name) return;
-                            for (var i = 0; i < l.features.length; i++) cache[key][l.features[i].id] = true;
+                            for (var i = 0; i < l.features.length; i++) {
+                                cache[key][l.features[i].id] = true;
+                            }
                         });
-                        immediate(function() { tiles() });
+                        immediate(function() { tiles(); });
                     });
                 }
                 tiles();
