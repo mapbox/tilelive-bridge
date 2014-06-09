@@ -4,11 +4,15 @@ var path = require('path');
 var fs = require('fs');
 var mapnik = require('mapnik');
 var zlib = require('zlib');
+var UPDATE = process.env.UPDATE;
 
 // Load fixture data.
 var xml = {
     a: fs.readFileSync(path.resolve(__dirname + '/test-a.xml'), 'utf8'),
     b: fs.readFileSync(path.resolve(__dirname + '/test-b.xml'), 'utf8')
+};
+var rasterxml = {
+    a: fs.readFileSync(path.resolve(__dirname + '/raster-a.xml'), 'utf8')
 };
 
 describe('init', function() {
@@ -128,7 +132,7 @@ function compare_vtiles(filepath,vtile1,vtile2) {
     }
 }
 
-describe('tiles', function() {
+describe('vector', function() {
     var sources = {
         a: new Bridge({ xml:xml.a, base:__dirname + '/', blank:true }),
         b: new Bridge({ xml:xml.b, base:__dirname + '/', deflate:false }),
@@ -187,6 +191,46 @@ describe('tiles', function() {
                     }
                     assert.equal(expected.length, buffer.length);
                     assert.deepEqual(expected, buffer);
+                    done();
+                });
+            });
+        });
+    });
+});
+
+describe('raster', function() {
+    var sources = {
+        a: new Bridge({ xml:rasterxml.a, base:__dirname + '/', blank:true })
+    };
+    var tests = {
+        a: ['0.0.0', '1.0.0']
+    };
+    Object.keys(tests).forEach(function(source) {
+        before(function(done) { sources[source].open(done); });
+    });
+    Object.keys(tests).forEach(function(source) {
+        tests[source].forEach(function(obj) {
+            var key = obj.key ? obj.key : obj;
+            var z = key.split('.')[0] | 0;
+            var x = key.split('.')[1] | 0;
+            var y = key.split('.')[2] | 0;
+            it('should render ' + source + ' (' + key + ')', function(done) {
+                sources[source].getTile(z,x,y, function(err, buffer, headers) {
+                    // Test that empty tiles are so.
+                    if (obj.empty) {
+                        assert.equal(err.message, 'Tile does not exist');
+                        return done();
+                    }
+
+                    assert.ifError(err);
+                    assert.equal(headers['Content-Type'], 'image/webp');
+
+                    // Test solid key generation.
+                    if (obj.solid) assert.equal(buffer.solid, obj.solid);
+
+                    var filepath = __dirname + '/expected-raster/' + source + '.' + key + '.webp';
+                    if (UPDATE) fs.writeFileSync(filepath, buffer);
+                    var expected = fs.readFileSync(filepath);
                     done();
                 });
             });
