@@ -133,7 +133,7 @@ Bridge.getRaster = function(source, map, z, x, y, callback) {
             if (err) return callback(err);
 
             // If source is in blank mode any solid tile is empty.
-            // if (solid && source._blank) return callback(new Error('Tile does not exist'));
+            if (solid && source._blank) return callback(new Error('Tile does not exist'));
 
             var pixel_key = '';
             if (solid) {
