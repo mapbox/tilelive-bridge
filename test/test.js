@@ -4,6 +4,7 @@ var path = require('path');
 var fs = require('fs');
 var mapnik = require('mapnik');
 var zlib = require('zlib');
+var UPDATE = process.env.UPDATE;
 
 // Load fixture data.
 var xml = {
@@ -164,7 +165,7 @@ describe('tiles', function() {
                     if (obj.solid) assert.equal(buffer.solid, obj.solid);
 
                     var filepath = __dirname + '/expected/' + source + '.' + key + '.vector.pbf';
-                    //fs.writeFileSync(filepath, buffer);
+                    if (UPDATE) fs.writeFileSync(filepath, buffer);
                     var expected = fs.readFileSync(filepath);
                     var vtile1 = new mapnik.VectorTile(+z,+x,+y);
                     var vtile2 = new mapnik.VectorTile(+z,+x,+y);
