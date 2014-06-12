@@ -268,7 +268,7 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                 if (!doc[field]) return ++i && immediate(function() {
                     feature();
                 });
-                doc._id = f.id();
+                doc._id = JSON.parse(f.toJSON()).properties._id;
                 doc._zxy = [];
                 doc._text = doc[field];
                 if (typeof doc._bbox === 'string') {
@@ -322,7 +322,7 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                         json.forEach(function(l) {
                             if (l.name !== layer.name) return;
                             for (var i = 0; i < l.features.length; i++) {
-                                cache[key][l.features[i].id] = true;
+                                cache[key][l.features[i].properties._id] = true;
                             }
                         });
                         immediate(function() { tiles(); });
