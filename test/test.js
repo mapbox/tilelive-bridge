@@ -223,27 +223,50 @@ describe('getIndexableDocs', function() {
             ], docs.map(function(d) { return d.NAME }));
             assert.deepEqual({
                 AREA: 44,
-                FIPS: 'AC',
-                ISO2: 'AG',
-                ISO3: 'ATG',
+                FIPS: "AC",
+                ISO2: "AG",
+                ISO3: "ATG",
                 LAT: 17.078,
                 LON: -61.783,
-                NAME: 'Antigua and Barbuda',
+                NAME: "Antigua and Barbuda",
                 POP2005: 83039,
                 REGION: 19,
                 SUBREGION: 29,
                 UN: 28,
-                _id: 1,
-                _zxy: [ '8/83/115', '8/84/115', '8/85/115' ],
-                _text: 'Antigua and Barbuda',
-                _bbox: [
-                    -61.88722200000002,
-                    17.02444100000014,
-                    -61.68666800000004,
-                    17.703888000000063
-                ],
-                _center: [ -61.78694500000003, 17.3641645000001 ]
+                _id: undefined,
+                _zxy: ["8/83/115","8/84/115","8/85/115"],
+                _text: "Antigua and Barbuda",
+                _bbox: [-61.88722200000002,17.02444100000014,-61.68666800000004,17.703888000000063],
+                _center: [-61.78694500000003,17.3641645000001]
             }, docs[0]);
+            assert.deepEqual({ 
+                AREA: 71,
+                FIPS: 'BA',
+                ISO2: 'BH',
+                ISO3: 'BHR',
+                  LAT: 26.019,
+                  LON: 50.562,
+                  NAME: 'Bahrain',
+                  POP2005: 724788,
+                  REGION: 142,
+                  SUBREGION: 145,
+                  UN: 48,
+                  _id: undefined,
+                  _zxy: 
+                  [ '8/163/108',
+                   '8/163/109',
+                   '8/164/108',
+                   '8/164/109',
+                   '8/165/108',
+                   '8/165/109' ],
+                  _text: 'Bahrain',
+                  _bbox: 
+                  [ 50.461662000000224,
+                   25.595276000000073,
+                   50.821388000000034,
+                   26.28888700000006 ],
+                  _center: [ 50.64152500000013, 25.942081500000064 ] 
+            }, docs[9]);
             source.getIndexableDocs(pointer, function(err, docs, pointer) {
                 assert.ifError(err);
                 assert.deepEqual({offset:20, limit:10}, pointer);
