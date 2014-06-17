@@ -231,30 +231,9 @@ describe('raster', function() {
                     var filepath = __dirname + '/expected-raster/' + source + '.' + key + '.webp';
                     if (UPDATE) fs.writeFileSync(filepath, buffer);
 
-                    var COMPUTE_THRESHOLD = 16;
                     var resultImage = new mapnik.Image.fromBytesSync(buffer);
-                    var resultView = resultImage.view(0, 0, resultImage.width(), resultImage.height());
                     var expectImage = new mapnik.Image.fromBytesSync(fs.readFileSync(filepath));
-                    var expectView = expectImage.view(0, 0, expectImage.width(), expectImage.height());
-
-                    assert.equal(resultImage.width(), expectImage.width());
-                    assert.equal(resultImage.height(), expectImage.height());
-
-                    for (var x = 0, w = resultImage.width(); x < w; x++) {
-                        for (var y = 0, h = resultImage.height(); y < h; y++) {
-                            var resultPixel = resultView.getPixel(x, y);
-                            var expectPixel = expectView.getPixel(x, y);
-                            var dr = Math.abs(resultPixel.r - expectPixel.r);
-                            var dg = Math.abs(resultPixel.g - expectPixel.g);
-                            var db = Math.abs(resultPixel.b - expectPixel.b);
-                            var da = Math.abs(resultPixel.a - expectPixel.a);
-                            assert.ok(dr < COMPUTE_THRESHOLD, 'diff r ' + dr);
-                            assert.ok(dg < COMPUTE_THRESHOLD, 'diff g ' + dg);
-                            assert.ok(db < COMPUTE_THRESHOLD, 'diff b ' + db);
-                            assert.ok(da < COMPUTE_THRESHOLD, 'diff a ' + da);
-                        }
-                    }
-
+                    assert.equal(expectImage.compare(resultImage),0);
                     done();
                 });
             });
