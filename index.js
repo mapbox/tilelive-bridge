@@ -103,8 +103,8 @@ Bridge.prototype.getTile = function(z, x, y, callback) {
         }
 
         var opts = {};
-        // use tolerance of 32 for zoom levels below max
-        opts.tolerance = z < source._maxzoom ? 32 : 0;
+        // use tolerance of 8 for zoom levels below max
+        opts.tolerance = z < source._maxzoom ? 8 : 0;
         // make larger than zero to enable
         opts.simplify = 0;
         // 'radial-distance', 'visvalingam-whyatt', 'zhao-saalfeld' (default)
