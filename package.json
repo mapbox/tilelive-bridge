@@ -13,7 +13,7 @@
     }
   ],
   "dependencies": {
-    "mapnik": "~1.4.2",
+    "mapnik": "~1.4.7",
     "sphericalmercator": "1.0.x",
     "mapnik-pool": "0.0.0"
   },
