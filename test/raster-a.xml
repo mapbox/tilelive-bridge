@@ -12,7 +12,7 @@
 
 <Style name="style">
     <Rule>
-        <RasterSymbolizer />
+        <RasterSymbolizer scaling="bilinear" />
     </Rule>
 </Style>
 
