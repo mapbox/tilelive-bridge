@@ -1,5 +1,9 @@
 # Changlog
 
+## 0.5.0
+
+ - Add basic handling for raster sources
+
 ## 0.4.0
 
  - Adjust tolerance from sliding scale to constant 32 until maxzoom is reached
