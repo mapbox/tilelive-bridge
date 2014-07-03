@@ -79,10 +79,7 @@ Bridge.prototype.update = function(opts, callback) {
         this._map = mapnikPool.fromString(this._xml,
             { size: 256, bufferSize: 256 },
             { strict: false, base: this._base + '/' });
-        // If no nextTick the stale pool can be used to acquire new maps.
-        return immediate(function() {
-            this._map.destroyAllNow(callback);
-        }.bind(this));
+        return callback();
     }
     return callback();
 };
@@ -126,7 +123,8 @@ Bridge.getRaster = function(source, map, z, x, y, callback) {
     map.resize(512,512);
     map.extent = sm.bbox(+x,+y,+z, false, '900913');
     map.render(new mapnik.Image(512,512), function(err, image) {
-        immediate(function() { source._map.release(map); });
+        source._map.release(map);
+
         if (err) return callback(err);
         var view = image.view(0,0,512,512);
         view.isSolid(function(err, solid, pixel) {
@@ -172,7 +170,7 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
     // https://github.com/mapnik/node-mapnik/issues/175
     opts.buffer_size = map.bufferSize;
     map.render(new mapnik.VectorTile(+z,+x,+y), opts, function(err, image) {
-        immediate(function() { source._map.release(map); });
+        source._map.release(map);
 
         if (err) return callback(err);
         // Fake empty RGBA to the rest of the tilelive API for now.
@@ -205,10 +203,13 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
 Bridge.prototype.getInfo = function(callback) {
     if (!this._map) return callback(new Error('Tilesource not loaded'));
 
+    var source = this;
     this._map.acquire(function(err, map) {
         if (err) return callback(err);
 
         var params = map.parameters;
+        source._map.release(map);
+
         var info = Object.keys(params).reduce(function(memo, key) {
             switch (key) {
             // The special "json" key/value pair allows JSON to be serialized
@@ -255,7 +256,6 @@ Bridge.prototype.getInfo = function(callback) {
             }
         }
 
-        immediate(function() { this._map.release(map); }.bind(this));
         return callback(null, info);
     }.bind(this));
 };
@@ -278,11 +278,13 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
         if (err) return callback(err);
         source._map.acquire(function(err, map) {
             if (err) return callback(err);
-            immediate(function() { source._map.release(map); });
 
-            var name = (map.parameters.geocoder_layer||'').split('.').shift() || '';
-            var field = (map.parameters.geocoder_layer||'').split('.').pop() || '_text';
-            var zoom = info.maxzoom + parseInt(map.parameters.geocoder_resolution||0, 10);
+            var params = map.parameters;
+            source._map.release(map);
+
+            var name = (params.geocoder_layer||'').split('.').shift() || '';
+            var field = (params.geocoder_layer||'').split('.').pop() || '_text';
+            var zoom = info.maxzoom + parseInt(params.geocoder_resolution||0, 10);
             var layer = name ?
                 map.layers().filter(function(l) { return l.name === name })[0] :
                 map.layers()[0];
