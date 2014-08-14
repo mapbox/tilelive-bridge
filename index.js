@@ -1,6 +1,5 @@
 var url = require('url');
 var path = require('path');
-var zlib = require('zlib');
 var crypto = require('crypto');
 var mapnik = require('mapnik');
 var fs = require('fs');
@@ -40,7 +39,6 @@ function Bridge(uri, callback) {
         if (!uri.xml) return callback && callback(new Error('No xml'));
 
         source._uri = uri;
-        source._deflate = typeof uri.deflate === 'boolean' ? uri.deflate : true;
         source._base = path.resolve(uri.base || __dirname);
 
         // 'blank' option forces all solid tiles to be interpreted as blank.
@@ -164,7 +162,6 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
 
     var headers = {};
     headers['Content-Type'] = 'application/x-protobuf';
-    if (source._deflate) headers['Content-Encoding'] = 'deflate';
 
     map.resize(256, 256);
     map.extent = sm.bbox(+x,+y,+z, false, '900913');
@@ -178,26 +175,20 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
         // Fake empty RGBA to the rest of the tilelive API for now.
         image.isSolid(function(err, solid, key) {
             if (err) return callback(err);
+            var buffer = image.getData();
             // Solid handling.
-            var done = function(err, buffer) {
-                if (err) return callback(err);
-                if (solid === false) return callback(err, buffer, headers);
-                // Empty tiles are equivalent to no tile.
-                if (source._blank || !key) return callback(new Error('Tile does not exist'));
-                // Fake a hex code by md5ing the key.
-                var mockrgb = crypto.createHash('md5').update(buffer).digest('hex').substr(0,6);
-                buffer.solid = [
-                    parseInt(mockrgb.substr(0,2),16),
-                    parseInt(mockrgb.substr(2,2),16),
-                    parseInt(mockrgb.substr(4,2),16),
-                    1
-                ].join(',');
-                return callback(err, buffer, headers);
-            };
-            // No deflate.
-            return !source._deflate
-                ? done(null, image.getData())
-                : zlib.deflate(image.getData(), done);
+            if (solid === false) return callback(err, buffer, headers);
+            // Empty tiles are equivalent to no tile.
+            if (source._blank || !key) return callback(new Error('Tile does not exist'));
+            // Fake a hex code by md5ing the key.
+            var mockrgb = crypto.createHash('md5').update(key).digest('hex').substr(0,6);
+            buffer.solid = [
+                parseInt(mockrgb.substr(0,2),16),
+                parseInt(mockrgb.substr(2,2),16),
+                parseInt(mockrgb.substr(4,2),16),
+                1
+            ].join(',');
+            return callback(err, buffer, headers);
         });
     });
 };
