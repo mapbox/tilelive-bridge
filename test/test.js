@@ -159,24 +159,28 @@ describe('vector', function() {
 
                     assert.ifError(err);
                     assert.equal(headers['Content-Type'], 'application/x-protobuf');
-                    assert.equal(headers['Content-Encoding'], undefined);
+                    assert.equal(headers['Content-Encoding'], 'gzip');
 
                     // Test solid key generation.
                     if (obj.solid) assert.equal(buffer.solid, obj.solid);
 
                     var filepath = __dirname + '/expected/' + source + '.' + key + '.vector.pbf';
                     if (UPDATE) fs.writeFileSync(filepath, buffer);
-                    var expected = fs.readFileSync(filepath);
-                    var vtile1 = new mapnik.VectorTile(+z,+x,+y);
-                    var vtile2 = new mapnik.VectorTile(+z,+x,+y);
-                    vtile1.setData(expected);
-                    vtile1.parse();
-                    vtile2.setData(buffer);
-                    vtile2.parse();
-                    compare_vtiles(filepath,vtile1,vtile2);
-                    assert.equal(expected.length, buffer.length);
-                    assert.deepEqual(expected, buffer);
-                    done();
+
+                    zlib.gunzip(buffer, function(err, buffer) {
+                        assert.ifError(err);
+                        var expected = fs.readFileSync(filepath);
+                        var vtile1 = new mapnik.VectorTile(+z,+x,+y);
+                        var vtile2 = new mapnik.VectorTile(+z,+x,+y);
+                        vtile1.setData(expected);
+                        vtile1.parse();
+                        vtile2.setData(buffer);
+                        vtile2.parse();
+                        compare_vtiles(filepath,vtile1,vtile2);
+                        assert.equal(expected.length, buffer.length);
+                        assert.deepEqual(expected, buffer);
+                        done();
+                    });
                 });
             });
         });
