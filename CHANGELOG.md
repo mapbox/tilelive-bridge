@@ -1,5 +1,9 @@
 # Changlog
 
+## 0.6.0
+
+ - Non-optional gzip compression for output VTs
+
 ## 0.5.0
 
  - Add basic handling for raster sources
