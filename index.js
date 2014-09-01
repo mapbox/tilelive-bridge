@@ -40,7 +40,6 @@ function Bridge(uri, callback) {
         if (!uri.xml) return callback && callback(new Error('No xml'));
 
         source._uri = uri;
-        source._deflate = typeof uri.deflate === 'boolean' ? uri.deflate : true;
         source._base = path.resolve(uri.base || __dirname);
 
         // 'blank' option forces all solid tiles to be interpreted as blank.
@@ -73,6 +72,8 @@ Bridge.prototype.update = function(opts, callback) {
     if (opts.xml && this._xml !== opts.xml) {
         // Unset maxzoom. Will be re-set on first getTile.
         this._maxzoom = undefined;
+        // Unset type. Will be re-set on first getTile.
+        this._type = undefined;
         this._xml = opts.xml;
         this._map = mapnikPool.fromString(this._xml,
             { size: 256, bufferSize: 256 },
@@ -102,50 +103,104 @@ Bridge.prototype.getTile = function(z, x, y, callback) {
             source._maxzoom = map.parameters.maxzoom ? parseInt(map.parameters.maxzoom, 10) : 14;
         }
 
-        var opts = {};
-        // use tolerance of 8 for zoom levels below max
-        opts.tolerance = z < source._maxzoom ? 8 : 0;
-        // make larger than zero to enable
-        opts.simplify = 0;
-        // 'radial-distance', 'visvalingam-whyatt', 'zhao-saalfeld' (default)
-        opts.simplify_algorithm = 'radial-distance';
+        // set source _type cache to prevent repeat calls to map layers
+        if (source._type === undefined) {
+            var layers = map.layers();
+            if (layers.length && layers.some(function(l) { return l.datasource.type === 'raster' })) {
+                source._type = 'raster';
+            } else {
+                source._type = 'vector';
+            }
+        }
 
-        var headers = {};
-        headers['Content-Type'] = 'application/x-protobuf';
-        if (source._deflate) headers['Content-Encoding'] = 'deflate';
+        if (source._type === 'raster') {
+            Bridge.getRaster(source, map, z, x, y, callback);
+        } else {
+            Bridge.getVector(source, map, z, x, y, callback);
+        }
+    });
+};
 
-        map.resize(256, 256);
-        map.extent = sm.bbox(+x,+y,+z, false, '900913');
-        // also pass buffer_size in options to be forward compatible with recent node-mapnik
-        // https://github.com/mapnik/node-mapnik/issues/175
-        opts.buffer_size = map.bufferSize;
-        map.render(new mapnik.VectorTile(+z,+x,+y), opts, function(err, image) {
-            immediate(function() { source._map.release(map); });
-
+Bridge.getRaster = function(source, map, z, x, y, callback) {
+    map.resize(512,512);
+    map.extent = sm.bbox(+x,+y,+z, false, '900913');
+    map.render(new mapnik.Image(512,512), function(err, image) {
+        immediate(function() { source._map.release(map); });
+        if (err) return callback(err);
+        var view = image.view(0,0,512,512);
+        view.isSolid(function(err, solid, pixel) {
             if (err) return callback(err);
-            // Fake empty RGBA to the rest of the tilelive API for now.
-            image.isSolid(function(err, solid, key) {
+
+            // If source is in blank mode any solid tile is empty.
+            if (solid && source._blank) return callback(new Error('Tile does not exist'));
+
+            var pixel_key = '';
+            if (solid) {
+                var a = (pixel>>>24) & 0xff;
+                var r = pixel & 0xff;
+                var g = (pixel>>>8) & 0xff;
+                var b = (pixel>>>16) & 0xff;
+                pixel_key = 'webp' + ',' +  r +','+ g + ',' + b + ',' + a;
+            }
+
+            view.encode('webp', {}, function(err, buffer) {
                 if (err) return callback(err);
+                buffer.solid = pixel_key;
+                return callback(err, buffer, {'Content-Type':'image/webp'});
+            });
+        });
+    });
+};
+
+Bridge.getVector = function(source, map, z, x, y, callback) {
+    var opts = {};
+    // use tolerance of 8 for zoom levels below max
+    opts.tolerance = z < source._maxzoom ? 8 : 0;
+    // make larger than zero to enable
+    opts.simplify = 0;
+    // 'radial-distance', 'visvalingam-whyatt', 'zhao-saalfeld' (default)
+    opts.simplify_algorithm = 'radial-distance';
+
+    var headers = {};
+    headers['Content-Type'] = 'application/x-protobuf';
+
+    map.resize(256, 256);
+    map.extent = sm.bbox(+x,+y,+z, false, '900913');
+    // also pass buffer_size in options to be forward compatible with recent node-mapnik
+    // https://github.com/mapnik/node-mapnik/issues/175
+    opts.buffer_size = map.bufferSize;
+    map.render(new mapnik.VectorTile(+z,+x,+y), opts, function(err, image) {
+        immediate(function() { source._map.release(map); });
+
+        if (err) return callback(err);
+        // Fake empty RGBA to the rest of the tilelive API for now.
+        image.isSolid(function(err, solid, key) {
+            if (err) return callback(err);
+
+            var buffer = image.getData();
+            zlib.gzip(buffer, function(err, pbfz) {
+                if (err) return callback(err);
+
+                headers['Content-Encoding'] = 'gzip';
+
                 // Solid handling.
-                var done = function(err, buffer) {
-                    if (err) return callback(err);
-                    if (solid === false) return callback(err, buffer, headers);
-                    // Empty tiles are equivalent to no tile.
-                    if (source._blank || !key) return callback(new Error('Tile does not exist'));
-                    // Fake a hex code by md5ing the key.
-                    var mockrgb = crypto.createHash('md5').update(buffer).digest('hex').substr(0,6);
-                    buffer.solid = [
-                        parseInt(mockrgb.substr(0,2),16),
-                        parseInt(mockrgb.substr(2,2),16),
-                        parseInt(mockrgb.substr(4,2),16),
-                        1
-                    ].join(',');
-                    return callback(err, buffer, headers);
-                };
-                // No deflate.
-                return !source._deflate
-                    ? done(null, image.getData())
-                    : zlib.deflate(image.getData(), done);
+                if (solid === false) return callback(err, pbfz, headers);
+
+                // Empty tiles are equivalent to no tile.
+                if (source._blank || !key) return callback(new Error('Tile does not exist'));
+
+                // Fake a hex code by md5ing the buffer. The key generated by
+                // node-mapnik for vector tiles is not reliably different for
+                // "solid" tiles with different contents.
+                var mockrgb = crypto.createHash('md5').update(buffer).digest('hex').substr(0,6);
+                pbfz.solid = [
+                    parseInt(mockrgb.substr(0,2),16),
+                    parseInt(mockrgb.substr(2,2),16),
+                    parseInt(mockrgb.substr(4,2),16),
+                    1
+                ].join(',');
+
+                return callback(err, pbfz, headers);
             });
         });
     });

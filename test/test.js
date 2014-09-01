@@ -11,6 +11,9 @@ var xml = {
     a: fs.readFileSync(path.resolve(__dirname + '/test-a.xml'), 'utf8'),
     b: fs.readFileSync(path.resolve(__dirname + '/test-b.xml'), 'utf8')
 };
+var rasterxml = {
+    a: fs.readFileSync(path.resolve(__dirname + '/raster-a.xml'), 'utf8')
+};
 
 describe('init', function() {
     it('should fail without xml', function(done) {
@@ -31,7 +34,6 @@ describe('init', function() {
             assert.ifError(err);
             assert.ok(source);
             assert.equal(source._blank, false);
-            assert.equal(source._deflate, true);
             assert.equal(source._xml, xml.a);
             assert.equal(source._base, __dirname);
             done();
@@ -43,17 +45,15 @@ describe('init', function() {
             assert.ifError(err);
             assert.ok(source);
             assert.equal(source._blank, false);
-            assert.equal(source._deflate, true);
             assert.equal(source._xml, xml.a);
             assert.equal(source._base, __dirname);
             done();
         });
     });
     it('should load query params', function(done) {
-        new Bridge('bridge://' + path.resolve(__dirname + '/test-a.xml?blank=1&deflate=0'), function(err, source) {
+        new Bridge('bridge://' + path.resolve(__dirname + '/test-a.xml?blank=1'), function(err, source) {
             assert.ifError(err);
             assert.equal(source._blank, true);
-            assert.equal(source._deflate, false);
             assert.equal(source._xml, xml.a);
             assert.equal(source._base, __dirname);
             done();
@@ -129,16 +129,16 @@ function compare_vtiles(filepath,vtile1,vtile2) {
     }
 }
 
-describe('tiles', function() {
+describe('vector', function() {
     var sources = {
         a: new Bridge({ xml:xml.a, base:__dirname + '/', blank:true }),
-        b: new Bridge({ xml:xml.b, base:__dirname + '/', deflate:false }),
+        b: new Bridge({ xml:xml.b, base:__dirname + '/' }),
         c: new Bridge({ xml:xml.a, base:__dirname + '/', blank:false })
     };
     var tests = {
         a: ['0.0.0', '1.0.0', '1.0.1', {key:'10.0.0',empty:true}, {key:'10.765.295',empty:true}],
         b: ['0.0.0'],
-        c: [{key:'10.0.0',empty:true}, {key:'10.765.295', solid:'34,21,156,1'}]
+        c: [{key:'10.0.0',empty:true}, {key:'10.765.295', solid:'217,222,32,1'}]
     };
     Object.keys(tests).forEach(function(source) {
         before(function(done) { sources[source].open(done); });
@@ -159,35 +159,70 @@ describe('tiles', function() {
 
                     assert.ifError(err);
                     assert.equal(headers['Content-Type'], 'application/x-protobuf');
-                    assert.equal(headers['Content-Encoding'], source !== 'b' ? 'deflate' : undefined);
+                    assert.equal(headers['Content-Encoding'], 'gzip');
 
                     // Test solid key generation.
                     if (obj.solid) assert.equal(buffer.solid, obj.solid);
 
                     var filepath = __dirname + '/expected/' + source + '.' + key + '.vector.pbf';
                     if (UPDATE) fs.writeFileSync(filepath, buffer);
-                    var expected = fs.readFileSync(filepath);
-                    var vtile1 = new mapnik.VectorTile(+z,+x,+y);
-                    var vtile2 = new mapnik.VectorTile(+z,+x,+y);
-                    if (headers['Content-Encoding'] == 'deflate') {
-                        zlib.inflate(expected,function(err,expected_inflated) {
-                            vtile1.setData(expected_inflated);
-                            vtile1.parse();
-                            zlib.inflate(buffer,function(err,buffer_inflated) {
-                                vtile2.setData(buffer_inflated);
-                                vtile2.parse();
-                                compare_vtiles(filepath,vtile1,vtile2);
-                            });
-                        });
-                    } else {
+
+                    zlib.gunzip(buffer, function(err, buffer) {
+                        assert.ifError(err);
+                        var expected = fs.readFileSync(filepath);
+                        var vtile1 = new mapnik.VectorTile(+z,+x,+y);
+                        var vtile2 = new mapnik.VectorTile(+z,+x,+y);
                         vtile1.setData(expected);
                         vtile1.parse();
                         vtile2.setData(buffer);
                         vtile2.parse();
                         compare_vtiles(filepath,vtile1,vtile2);
+                        assert.equal(expected.length, buffer.length);
+                        assert.deepEqual(expected, buffer);
+                        done();
+                    });
+                });
+            });
+        });
+    });
+});
+
+describe('raster', function() {
+    var sources = {
+        a: new Bridge({ xml:rasterxml.a, base:__dirname + '/', blank:true })
+    };
+    var tests = {
+        a: ['0.0.0', '1.0.0']
+    };
+    Object.keys(tests).forEach(function(source) {
+        before(function(done) { sources[source].open(done); });
+    });
+    Object.keys(tests).forEach(function(source) {
+        tests[source].forEach(function(obj) {
+            var key = obj.key ? obj.key : obj;
+            var z = key.split('.')[0] | 0;
+            var x = key.split('.')[1] | 0;
+            var y = key.split('.')[2] | 0;
+            it('should render ' + source + ' (' + key + ')', function(done) {
+                sources[source].getTile(z,x,y, function(err, buffer, headers) {
+                    // Test that empty tiles are so.
+                    if (obj.empty) {
+                        assert.equal(err.message, 'Tile does not exist');
+                        return done();
                     }
-                    assert.equal(expected.length, buffer.length);
-                    assert.deepEqual(expected, buffer);
+
+                    assert.ifError(err);
+                    assert.equal(headers['Content-Type'], 'image/webp');
+
+                    // Test solid key generation.
+                    if (obj.solid) assert.equal(buffer.solid, obj.solid);
+
+                    var filepath = __dirname + '/expected-raster/' + source + '.' + key + '.webp';
+                    if (UPDATE) fs.writeFileSync(filepath, buffer);
+
+                    var resultImage = new mapnik.Image.fromBytesSync(buffer);
+                    var expectImage = new mapnik.Image.fromBytesSync(fs.readFileSync(filepath));
+                    assert.equal(expectImage.compare(resultImage),0);
                     done();
                 });
             });
