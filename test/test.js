@@ -270,7 +270,10 @@ describe('getIndexableDocs', function() {
                 SUBREGION: 29,
                 UN: 28,
                 _id: 1,
-                _zxy: [ '8/83/115', '8/84/115', '8/85/115' ],
+                _geometry: {
+                    type: 'Point',
+                    coordinates: [-61.783, 17.078]
+                },
                 _text: 'Antigua and Barbuda',
                 _bbox: [
                     -61.88722200000002,
@@ -281,6 +284,7 @@ describe('getIndexableDocs', function() {
                 _center: [ -61.78694500000003, 17.3641645000001 ]
             }, docs[0]);
             source.getIndexableDocs(pointer, function(err, docs, pointer) {
+                console.log(docs)
                 assert.ifError(err);
                 assert.deepEqual({offset:20, limit:10}, pointer);
                 assert.deepEqual([
