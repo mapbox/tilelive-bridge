@@ -271,9 +271,50 @@ describe('getIndexableDocs', function() {
                 UN: 28,
                 _id: 1,
                 _geometry: {
-                    type: 'Point',
-                    coordinates: [-61.783, 17.078]
-                },
+                    "type": "MultiPolygon",
+                    "coordinates": [
+                        [
+                          [
+                            [
+                              -68.6692847049373,
+                              19.2367030196653
+                            ],
+                            [
+                              -68.8925403965028,
+                              19.3308300247353
+                            ],
+                            [
+                              -68.7892659653091,
+                              19.398459273632398
+                            ],
+                            [
+                              -68.6692847049373,
+                              19.2367030196653
+                            ]
+                          ]
+                        ],
+                        [
+                          [
+                            [
+                              -68.7165999413039,
+                              19.9178721060401
+                            ],
+                            [
+                              -68.8545092056682,
+                              19.888029255689002
+                            ],
+                            [
+                              -68.8767775566065,
+                              20.0291807047496
+                            ],
+                            [
+                              -68.7165999413039,
+                              19.9178721060401
+                            ]
+                          ]
+                        ]
+                    ]
+                    },
                 _text: 'Antigua and Barbuda',
                 _bbox: [
                     -61.88722200000002,
@@ -284,7 +325,6 @@ describe('getIndexableDocs', function() {
                 _center: [ -61.78694500000003, 17.3641645000001 ]
             }, docs[0]);
             source.getIndexableDocs(pointer, function(err, docs, pointer) {
-                console.log(docs)
                 assert.ifError(err);
                 assert.deepEqual({offset:20, limit:10}, pointer);
                 assert.deepEqual([

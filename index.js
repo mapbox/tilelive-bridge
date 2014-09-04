@@ -6,6 +6,7 @@ var mapnik = require('mapnik');
 var fs = require('fs');
 var qs = require('querystring');
 var sm = new (require('sphericalmercator'))();
+var traverse = require('traverse');
 var immediate = global.setImmediate || process.nextTick;
 
 // Register datasource plugins
@@ -309,6 +310,7 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                 }
 
                 var f = featureset.next();
+
                 if (!f) {
                     pointer.offset = i;
                     return callback(null, docs, pointer);
@@ -345,7 +347,8 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                     ];
                 }
                 if (doc._bbox[0] === doc._bbox[2]) delete doc._bbox;
-                doc.geometry = 
+
+                doc._geometry = fromE6(JSON.parse(f.toJSON()).geometry);
                 docs.push(doc);
                 i++;
                 feature();
@@ -354,4 +357,14 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
         });
     });
 };
+
+function fromE6(geom) {
+    var divisor = 100000;
+    traverse(geom.coordinates).forEach(function(x){
+        if(typeof x === 'number') {
+            this.update(x / divisor);
+        }
+    });
+    return geom;
+}
 
