@@ -14,8 +14,9 @@
   ],
   "dependencies": {
     "mapnik": "~1.4.7",
+    "mapnik-pool": "0.0.0",
     "sphericalmercator": "1.0.x",
-    "mapnik-pool": "0.0.0"
+    "traverse": "0.6.6"
   },
   "devDependencies": {
     "mocha": "1.21.4"
