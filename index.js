@@ -348,7 +348,7 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                 }
                 if (doc._bbox[0] === doc._bbox[2]) delete doc._bbox;
 
-                doc._geometry = fromE6(JSON.parse(f.toJSON()).geometry);
+                doc._geometry = geomToGeographic(JSON.parse(f.toJSON()).geometry);
                 docs.push(doc);
                 i++;
                 feature();
@@ -358,13 +358,28 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
     });
 };
 
-function fromE6(geom) {
-    var divisor = 100000;
-    traverse(geom.coordinates).forEach(function(x){
-        if(typeof x === 'number') {
-            this.update(x / divisor);
+function geomToGeographic(geom) {
+    traverse(geom.coordinates).forEach(function(coord){
+        if(Array.isArray(coord) && typeof coord[0] === 'number') {
+            this.update(coordToGeographic(coord[0], coord[1]));
         }
     });
     return geom;
 }
 
+function coordToGeographic(lon, lat) {
+    var lon84;
+    var lat84;
+    if (Math.abs(lon) < 180 && Math.abs(lat) < 90){
+        return [lon, lat];
+    }
+    if ((Math.abs(lon) > 20037508.3427892) || (Math.abs(lat) > 20037508.3427892)){
+        return [lon, lat];
+    }
+    var a = lon / 6378137;
+    var b = a * 57.295779513082323;
+    var c = Math.floor((b + 180.0) / 360.0);
+    lon84 = b - (c * 360.0);
+    lat84 = (1.5707963267948966 - (2.0 * Math.atan(Math.exp((-1.0 * lat) / 6378137.0)))) * 57.295779513082323;
+    return [lon84, lat84];
+}
