@@ -344,7 +344,6 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                 if (doc._bbox[0] === doc._bbox[2]) delete doc._bbox;
 
                 doc._geometry = geomToGeographic(JSON.parse(f.toJSON()).geometry);
-                //console.log(JSON.stringify(JSON.parse(f.toJSON()).geometry))
                 docs.push(doc);
                 i++;
                 immediate(feature);
