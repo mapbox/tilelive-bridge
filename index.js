@@ -209,7 +209,6 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
 
 Bridge.prototype.getInfo = function(callback) {
     if (!this._map) return callback(new Error('Tilesource not loaded'));
-
     this._map.acquire(function(err, map) {
         if (err) return callback(err);
 
@@ -317,14 +316,10 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                 }
 
                 // Skip over features if not yet paged to offset.
-                if (i < pointer.offset) return ++i && immediate(function() {
-                    feature();
-                });
+                if (i < pointer.offset) return ++i && immediate(feature);
 
                 var doc = f.attributes();
-                if (!doc[field]) return ++i && immediate(function() {
-                    feature();
-                });
+                if (!doc[field]) return ++i && immediate(feature);
                 doc._id = f.id();
                 doc._text = doc[field];
                 if (typeof doc._bbox === 'string') {
@@ -349,10 +344,12 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                 if (doc._bbox[0] === doc._bbox[2]) delete doc._bbox;
 
                 doc._geometry = geomToGeographic(JSON.parse(f.toJSON()).geometry);
+                //console.log(JSON.stringify(JSON.parse(f.toJSON()).geometry))
                 docs.push(doc);
                 i++;
-                feature();
+                immediate(feature);
             }
+
             feature();
         });
     });
