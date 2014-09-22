@@ -9,7 +9,9 @@ var UPDATE = process.env.UPDATE;
 // Load fixture data.
 var xml = {
     a: fs.readFileSync(path.resolve(__dirname + '/test-a.xml'), 'utf8'),
-    b: fs.readFileSync(path.resolve(__dirname + '/test-b.xml'), 'utf8')
+    b: fs.readFileSync(path.resolve(__dirname + '/test-b.xml'), 'utf8'),
+    c: fs.readFileSync(path.resolve(__dirname + '/test-c.xml'), 'utf8')
+
 };
 var rasterxml = {
     a: fs.readFileSync(path.resolve(__dirname + '/raster-a.xml'), 'utf8')
@@ -133,12 +135,14 @@ describe('vector', function() {
     var sources = {
         a: new Bridge({ xml:xml.a, base:__dirname + '/', blank:true }),
         b: new Bridge({ xml:xml.b, base:__dirname + '/' }),
-        c: new Bridge({ xml:xml.a, base:__dirname + '/', blank:false })
+        c: new Bridge({ xml:xml.a, base:__dirname + '/', blank:false }),
+        d: new Bridge({ xml:xml.c, base:__dirname + '/' })
     };
     var tests = {
         a: ['0.0.0', '1.0.0', '1.0.1', {key:'10.0.0',empty:true}, {key:'10.765.295',empty:true}],
         b: ['0.0.0'],
-        c: [{key:'10.0.0',empty:true}, {key:'10.765.295', solid:'217,222,32,1'}]
+        c: [{key:'10.0.0',empty:true}, {key:'10.765.295', solid:'217,222,32,1'}],
+        d: [{key:'0.0.0', vtfx:true}, {key:'10.765.295', vtfx:true}]
     };
     Object.keys(tests).forEach(function(source) {
         before(function(done) { sources[source].open(done); });
