@@ -355,11 +355,15 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
 };
 
 function geomToGeographic(geom) {
-    traverse(geom.coordinates).forEach(function(coord){
-        if(Array.isArray(coord) && typeof coord[0] === 'number') {
-            this.update(coordToGeographic(coord[0], coord[1]));
-        }
-    });
+    if(geom.type === 'Point'){
+        geom.coordinates = coordToGeographic(geom.coordinates[0], geom.coordinates[1])
+    } else {
+        traverse(geom.coordinates).forEach(function(coord){
+            if(Array.isArray(coord) && typeof coord[0] === 'number') {
+                this.update(coordToGeographic(coord[0], coord[1]));
+            }
+        });
+    }
     return geom;
 }
 
