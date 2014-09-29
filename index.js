@@ -7,7 +7,7 @@ var fs = require('fs');
 var qs = require('querystring');
 var sm = new (require('sphericalmercator'))();
 var immediate = global.setImmediate || process.nextTick;
-var vtfx = require('vtfx-drop');
+var vtfx = require('vtfx');
 
 // Register datasource plugins
 mapnik.register_default_input_plugins();

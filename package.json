@@ -16,7 +16,7 @@
     "mapnik": "~1.4.7",
     "sphericalmercator": "1.0.x",
     "mapnik-pool": "0.0.0",
-    "vtfx-drop": "**need api key**"
+    "vtfx": "https://github.com/mapbox/vtfx/tarball/master"
   },
   "devDependencies": {
     "mocha": "1.21.4"
