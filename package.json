@@ -13,7 +13,7 @@
     }
   ],
   "dependencies": {
-    "mapnik": "~1.4.7",
+    "mapnik": "https://github.com/mapnik/node-mapnik/archive/master.tar.gz",
     "sphericalmercator": "1.0.x",
     "mapnik-pool": "0.0.0"
   },
