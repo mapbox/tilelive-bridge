@@ -102,9 +102,8 @@ Bridge.prototype.getTile = function(z, x, y, callback) {
         if (source._maxzoom === undefined) {
             source._maxzoom = map.parameters.maxzoom ? parseInt(map.parameters.maxzoom, 10) : 14;
         }
-        if (source._vtfx === undefined) {
-            source._vtfx = map.parameters.vtfx ? JSON.parse(map.parameters.vtfx) : null;
-        }
+
+        source._vtfx = map.parameters.vtfx ? JSON.parse(map.parameters.vtfx) : null;
 
         // set source _type cache to prevent repeat calls to map layers
         if (source._type === undefined) {
