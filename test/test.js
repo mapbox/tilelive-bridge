@@ -8,11 +8,11 @@ var UPDATE = process.env.UPDATE;
 
 // Load fixture data.
 var xml = {
-    a: fs.readFileSync(path.resolve(__dirname + '/test-a.xml'), 'utf8'),
-    b: fs.readFileSync(path.resolve(__dirname + '/test-b.xml'), 'utf8')
+    a: fs.readFileSync(path.resolve(path.join(__dirname,'/test-a.xml')), 'utf8'),
+    b: fs.readFileSync(path.resolve(path.join(__dirname,'/test-b.xml')), 'utf8')
 };
 var rasterxml = {
-    a: fs.readFileSync(path.resolve(__dirname + '/raster-a.xml'), 'utf8')
+    a: fs.readFileSync(path.resolve(path.join(__dirname,'/raster-a.xml')), 'utf8')
 };
 
 describe('init', function() {
@@ -23,14 +23,14 @@ describe('init', function() {
         });
     });
     it('should load with callback', function(done) {
-        new Bridge({ xml: xml.a, base:__dirname + '/' }, function(err, source) {
+        new Bridge({ xml: xml.a, base:path.join(__dirname,'/') }, function(err, source) {
             assert.ifError(err);
             assert.ok(source);
             done();
         });
     });
     it('should load from filepath', function(done) {
-        new Bridge('bridge://' + path.resolve(__dirname + '/test-a.xml'), function(err, source) {
+        new Bridge('bridge://' + path.resolve(path.join(__dirname,'/test-a.xml')), function(err, source) {
             assert.ifError(err);
             assert.ok(source);
             assert.equal(source._blank, false);
@@ -40,7 +40,7 @@ describe('init', function() {
         });
     });
     it('should load with listener', function(done) {
-        var source = new Bridge('bridge://' + path.resolve(__dirname + '/test-a.xml'));
+        var source = new Bridge('bridge://' + path.resolve(path.join(__dirname,'/test-a.xml')));
         source.on('open', function(err) {
             assert.ifError(err);
             assert.ok(source);
@@ -51,7 +51,7 @@ describe('init', function() {
         });
     });
     it('should load query params', function(done) {
-        new Bridge('bridge://' + path.resolve(__dirname + '/test-a.xml?blank=1'), function(err, source) {
+        new Bridge('bridge://' + path.resolve(path.join(__dirname,'/test-a.xml?blank=1')), function(err, source) {
             assert.ifError(err);
             assert.equal(source._blank, true);
             assert.equal(source._xml, xml.a);
@@ -60,7 +60,7 @@ describe('init', function() {
         });
     });
     it('#open should call all listeners', function(done) {
-        var b = new Bridge({ xml: xml.a, base:__dirname + '/' });
+        var b = new Bridge({ xml: xml.a, base:path.join(__dirname,'/') });
         var remaining = 3;
         for (var i = 0, l = remaining; i < l; i++) b.open(function(err, source) {
             assert.ifError(err);
@@ -69,7 +69,7 @@ describe('init', function() {
         });
     });
     it('should get info', function(done) {
-        new Bridge({ xml: xml.a, base:__dirname + '/' }, function(err, source) {
+        new Bridge({ xml: xml.a, base:path.join(__dirname,'/') }, function(err, source) {
             assert.ifError(err);
             assert.ok(source);
             source.getInfo(function(err, info) {
@@ -88,7 +88,7 @@ describe('init', function() {
         });
     });
     it('should update xml', function(done) {
-        new Bridge({ xml: xml.a, base:__dirname + '/' }, function(err, source) {
+        new Bridge({ xml: xml.a, base:path.join(__dirname,'/') }, function(err, source) {
             assert.ifError(err);
             assert.ok(source);
             source.getInfo(function(err, info) {
@@ -131,9 +131,9 @@ function compare_vtiles(filepath,vtile1,vtile2) {
 
 describe('vector', function() {
     var sources = {
-        a: new Bridge({ xml:xml.a, base:__dirname + '/', blank:true }),
-        b: new Bridge({ xml:xml.b, base:__dirname + '/' }),
-        c: new Bridge({ xml:xml.a, base:__dirname + '/', blank:false })
+        a: new Bridge({ xml:xml.a, base:path.join(__dirname,'/'), blank:true }),
+        b: new Bridge({ xml:xml.b, base:path.join(__dirname,'/') }),
+        c: new Bridge({ xml:xml.a, base:path.join(__dirname,'/'), blank:false })
     };
     var tests = {
         a: ['0.0.0', '1.0.0', '1.0.1', {key:'10.0.0',empty:true}, {key:'10.765.295',empty:true}],
@@ -167,7 +167,7 @@ describe('vector', function() {
                     zlib.gunzip(buffer, function(err, buffer) {
                         assert.ifError(err);
 
-                        var filepath = __dirname + '/expected/' + source + '.' + key + '.vector.pbf';
+                        var filepath = path.join(__dirname,'/expected/' + source + '.' + key + '.vector.pbf');
                         if (UPDATE) fs.writeFileSync(filepath, buffer);
 
                         var expected = fs.readFileSync(filepath);
@@ -190,7 +190,7 @@ describe('vector', function() {
 
 describe('raster', function() {
     var sources = {
-        a: new Bridge({ xml:rasterxml.a, base:__dirname + '/', blank:true })
+        a: new Bridge({ xml:rasterxml.a, base:path.join(__dirname,'/'), blank:true })
     };
     var tests = {
         a: ['0.0.0', '1.0.0']
@@ -218,7 +218,7 @@ describe('raster', function() {
                     // Test solid key generation.
                     if (obj.solid) assert.equal(buffer.solid, obj.solid);
 
-                    var filepath = __dirname + '/expected-raster/' + source + '.' + key + '.webp';
+                    var filepath = path.join(__dirname,'/expected-raster/' + source + '.' + key + '.webp');
                     if (UPDATE) fs.writeFileSync(filepath, buffer);
 
                     var resultImage = new mapnik.Image.fromBytesSync(buffer);
@@ -234,7 +234,7 @@ describe('raster', function() {
 describe('getIndexableDocs', function() {
     var source;
     before(function(done) {
-        new Bridge({ xml:xml.a, base:__dirname + '/', blank:true }, function(err, s) {
+        new Bridge({ xml:xml.a, base:path.join(__dirname,'/'), blank:true }, function(err, s) {
             if (err) return done(err);
             source = s;
             done();
