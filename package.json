@@ -18,10 +18,10 @@
     "mapnik-pool": "0.0.0"
   },
   "devDependencies": {
-    "mocha": "1.21.4"
+    "tape": "3.0.x"
   },
   "scripts": {
-    "test": "mocha -R spec"
+    "test": "tape test/*.js"
   },
   "engines": {
     "node": "0.10.x"
