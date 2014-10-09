@@ -346,6 +346,8 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                 var t = sm.xyz(f.extent(), zoom, false, srs);
                 var x = t.minX;
                 var y = t.minY;
+                if (t.maxX < t.minX) t.maxX = t.minX;
+                if (t.maxY < t.minY) t.maxY = t.minY;
                 var c = (t.maxX - t.minX + 1) * (t.maxY - t.minY + 1);
                 function tiles() {
                     if (x > t.maxX && y > t.maxY) {
