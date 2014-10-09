@@ -265,7 +265,6 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
 
     pointer = pointer || {};
     pointer.limit = pointer.limit || 10000;
-    pointer.offset = pointer.offset || 0;
 
     var source = this;
     var knownsrs = {
@@ -292,28 +291,22 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
             if (!knownsrs[layer.srs]) return callback(new Error('Unknown layer SRS'));
 
             var srs = knownsrs[layer.srs];
-            var featureset = layer.datasource.featureset();
+            if (!pointer.featureset) pointer.featureset = layer.datasource.featureset();
+            var featureset = pointer.featureset;
             var params = layer.datasource.parameters();
             var docs = [];
             var cache = {};
             var i = 0;
 
             function feature() {
-                if (i === pointer.offset + pointer.limit) {
-                    pointer.offset = pointer.offset + pointer.limit;
+                if (i === pointer.limit) {
                     return callback(null, docs, pointer);
                 }
 
                 var f = featureset.next();
                 if (!f) {
-                    pointer.offset = i;
                     return callback(null, docs, pointer);
                 }
-
-                // Skip over features if not yet paged to offset.
-                if (i < pointer.offset) return ++i && immediate(function() {
-                    feature();
-                });
 
                 var doc = f.attributes();
                 if (!doc[field]) return ++i && immediate(function() {
