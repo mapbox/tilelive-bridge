@@ -181,7 +181,7 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
 
             var buffer = image.getData();
 
-            if (Object.keys(source._vtfx).length) {
+            if (source._vtfx && Object.keys(source._vtfx).length) {
                 vtfx(buffer, source._vtfx, function(err, buffer) {
                     zip(buffer);
                 });
