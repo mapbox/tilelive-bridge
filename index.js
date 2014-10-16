@@ -157,10 +157,6 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
     var opts = {};
     // use tolerance of 32 for zoom levels below max
     opts.tolerance = z < source._maxzoom ? 32 : 0;
-    // make larger than zero to enable
-    opts.simplify = 0;
-    // 'radial-distance', 'visvalingam-whyatt', 'zhao-saalfeld' (default)
-    opts.simplify_algorithm = 'radial-distance';
 
     var headers = {};
     headers['Content-Type'] = 'application/x-protobuf';
