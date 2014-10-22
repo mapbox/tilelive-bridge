@@ -338,15 +338,24 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                 }
                 if (doc._bbox[0] === doc._bbox[2]) delete doc._bbox;
                 var geom = f.geometry();
-                var from = new mapnik.Projection(srs);
-                var to = new mapnik.Projection("+init=epsg:4326");
-                var tr = new mapnik.ProjTransform(from,to);
-                geom.toJSON({transform:tr},function(err,json_string) {
-                    doc._geometry = JSON.parse(json_string);
-                    docs.push(doc);
-                    i++;
-                    immediate(feature);
-                });
+                if (srs == "+init=epsg:4326") {
+                    geom.toJSON(function(err,json_string) {
+                        doc._geometry = JSON.parse(json_string);
+                        docs.push(doc);
+                        i++;
+                        immediate(feature);
+                    });
+                } else {
+                    var from = new mapnik.Projection(srs);
+                    var to = new mapnik.Projection("+init=epsg:4326");
+                    var tr = new mapnik.ProjTransform(from,to);
+                    geom.toJSON({transform:tr},function(err,json_string) {
+                        doc._geometry = JSON.parse(json_string);
+                        docs.push(doc);
+                        i++;
+                        immediate(feature);
+                    });
+                }
             }
 
             feature();
