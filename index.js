@@ -269,9 +269,9 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
 
     var source = this;
     var knownsrs = {
-        '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over': '900913',
-        '+proj=merc +lon_0=0 +lat_ts=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs': '900913',
-        '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs': 'WGS84'
+        '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over': '+init=epsg:3857',
+        '+proj=merc +lon_0=0 +lat_ts=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs': '+init=epsg:3857',
+        '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs': '+init=epsg:4326'
     };
 
     source.getInfo(function(err, info) {
@@ -338,44 +338,19 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                     ];
                 }
                 if (doc._bbox[0] === doc._bbox[2]) delete doc._bbox;
-
-                doc._geometry = geomToGeographic(JSON.parse(f.toJSON()).geometry);
-                docs.push(doc);
-                i++;
-                immediate(feature);
+                var geom = f.geometry();
+                var from = new mapnik.Projection(srs);
+                var to = new mapnik.Projection("+init=epsg:4326");
+                var tr = new mapnik.ProjTransform(from,to);
+                geom.toJSON({transform:tr},function(err,json_string) {
+                    doc._geometry = JSON.parse(json_string);
+                    docs.push(doc);
+                    i++;
+                    immediate(feature);
+                });
             }
 
             feature();
         });
     });
 };
-
-function geomToGeographic(geom) {
-    if(geom.type === 'Point'){
-        geom.coordinates = coordToGeographic(geom.coordinates[0], geom.coordinates[1])
-    } else {
-        traverse(geom.coordinates).forEach(function(coord){
-            if(Array.isArray(coord) && typeof coord[0] === 'number') {
-                this.update(coordToGeographic(coord[0], coord[1]));
-            }
-        });
-    }
-    return geom;
-}
-
-function coordToGeographic(lon, lat) {
-    var lon84;
-    var lat84;
-    if (Math.abs(lon) < 180 && Math.abs(lat) < 90){
-        return [lon, lat];
-    }
-    if ((Math.abs(lon) > 20037508.3427892) || (Math.abs(lat) > 20037508.3427892)){
-        return [lon, lat];
-    }
-    var a = lon / 6378137;
-    var b = a * 57.295779513082323;
-    var c = Math.floor((b + 180.0) / 360.0);
-    lon84 = b - (c * 360.0);
-    lat84 = (1.5707963267948966 - (2.0 * Math.atan(Math.exp((-1.0 * lat) / 6378137.0)))) * 57.295779513082323;
-    return [lon84, lat84];
-}

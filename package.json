@@ -13,8 +13,7 @@
     }
   ],
   "dependencies": {
-    "traverse": "0.6.6",
-    "mapnik": "~3.0.0",
+    "mapnik": "https://github.com/mapnik/node-mapnik/tarball/master",
     "sphericalmercator": "1.0.x",
     "mapnik-pool": "0.1.x"
   },
