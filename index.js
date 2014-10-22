@@ -6,7 +6,6 @@ var mapnik = require('mapnik');
 var fs = require('fs');
 var qs = require('querystring');
 var sm = new (require('sphericalmercator'))();
-var traverse = require('traverse');
 var immediate = global.setImmediate || process.nextTick;
 
 // Register datasource plugins
