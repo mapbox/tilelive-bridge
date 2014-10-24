@@ -204,7 +204,7 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
         tape('setup', function(assert) {
             sources[source].open(function(err) {
                 assert.ifError(err);
-                assert.end()
+                assert.end();
             });
         });
     });
@@ -278,7 +278,22 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
             assert.equal(29, docs[0].SUBREGION);
             assert.equal(28, docs[0].UN);
             assert.equal(1, docs[0]._id);
-            assert.deepEqual({"type":"MultiPolygon","coordinates":[[[[-61.686668,17.0244410000002],[-61.887222,17.105274],[-61.7944489999999,17.1633300000001],[-61.686668,17.0244410000002]]],[[[-61.7291719999999,17.608608],[-61.853058,17.5830540000001],[-61.873062,17.7038880000001],[-61.7291719999999,17.608608]]]]}, docs[0]._geometry);
+            
+            var coordinates = [[[[-61.686668,17.0244410000002],[-61.887222,17.105274],[-61.7944489999999,17.1633300000001],[-61.686668,17.0244410000002]]],[[[-61.7291719999999,17.608608],[-61.853058,17.5830540000001],[-61.873062,17.7038880000001],[-61.7291719999999,17.608608]]]];
+            for(var i = 0; i < docs[0]._geometry.coordinates.length; i++) {
+                var poly = docs[0]._geometry.coordinates[i];
+                for(var k = 0; k < poly.length; k++) {
+                    var ring = poly[k];
+                    for(var j = 0; j < ring.length; j++) {
+                        var pair = ring[j];
+                        var lonDiff = Math.abs(pair[0] - coordinates[i][k][j][0]);
+                        var latDiff = Math.abs(pair[1] - coordinates[i][k][j][1]);
+                        assert.equal(true, lonDiff < 0.0000000000001);
+                        assert.equal(true, latDiff < 0.0000000000001);
+                    }
+                }
+            }
+                
             assert.equal('Antigua and Barbuda', docs[0]._text);
             assert.deepEqual([
                     -61.88722200000002,
