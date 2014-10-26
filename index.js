@@ -140,7 +140,7 @@ Bridge.getRaster = function(source, map, z, x, y, callback) {
                 var r = pixel & 0xff;
                 var g = (pixel>>>8) & 0xff;
                 var b = (pixel>>>16) & 0xff;
-                pixel_key = 'webp' + ',' +  r +','+ g + ',' + b + ',' + a;
+                pixel_key = r +','+ g + ',' + b + ',' + a;
             }
 
             view.encode('webp', {}, function(err, buffer) {
