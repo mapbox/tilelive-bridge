@@ -156,12 +156,8 @@ Bridge.getRaster = function(source, map, z, x, y, callback) {
 
 Bridge.getVector = function(source, map, z, x, y, callback) {
     var opts = {};
-    // use tolerance of 32 for zoom levels below max
-    opts.tolerance = z < source._maxzoom ? 32 : 0;
-    // make larger than zero to enable
-    opts.simplify = 0;
-    // 'radial-distance', 'visvalingam-whyatt', 'zhao-saalfeld' (default)
-    opts.simplify_algorithm = 'radial-distance';
+    // use tolerance of 8 for zoom levels below max
+    opts.tolerance = z < source._maxzoom ? 8 : 0;
 
     var headers = {};
     headers['Content-Type'] = 'application/x-protobuf';
@@ -282,7 +278,6 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
 
     pointer = pointer || {};
     pointer.limit = pointer.limit || 10000;
-    pointer.offset = pointer.offset || 0;
 
     var source = this;
     var knownsrs = {
@@ -309,28 +304,22 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
             if (!knownsrs[layer.srs]) return callback(new Error('Unknown layer SRS'));
 
             var srs = knownsrs[layer.srs];
-            var featureset = layer.datasource.featureset();
+            if (!pointer.featureset) pointer.featureset = layer.datasource.featureset();
+            var featureset = pointer.featureset;
             var params = layer.datasource.parameters();
             var docs = [];
             var cache = {};
             var i = 0;
 
             function feature() {
-                if (i === pointer.offset + pointer.limit) {
-                    pointer.offset = pointer.offset + pointer.limit;
+                if (i === pointer.limit) {
                     return callback(null, docs, pointer);
                 }
 
                 var f = featureset.next();
                 if (!f) {
-                    pointer.offset = i;
                     return callback(null, docs, pointer);
                 }
-
-                // Skip over features if not yet paged to offset.
-                if (i < pointer.offset) return ++i && immediate(function() {
-                    feature();
-                });
 
                 var doc = f.attributes();
                 if (!doc[field]) return ++i && immediate(function() {
@@ -363,6 +352,8 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                 var t = sm.xyz(f.extent(), zoom, false, srs);
                 var x = t.minX;
                 var y = t.minY;
+                if (t.maxX < t.minX) t.maxX = t.minX;
+                if (t.maxY < t.minY) t.maxY = t.minY;
                 var c = (t.maxX - t.minX + 1) * (t.maxY - t.minY + 1);
                 function tiles() {
                     if (x > t.maxX && y > t.maxY) {

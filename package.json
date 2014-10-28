@@ -1,6 +1,6 @@
 {
   "name": "tilelive-bridge",
-  "version": "0.6.0",
+  "version": "1.1.0",
   "main": "./index.js",
   "description": "Datasource => vector tiles bridge backend for tilelive",
   "repository": {
@@ -13,16 +13,16 @@
     }
   ],
   "dependencies": {
-    "mapnik": "~1.4.7",
+    "mapnik": "~3.0.0",
     "sphericalmercator": "1.0.x",
-    "mapnik-pool": "0.0.0",
+    "mapnik-pool": "0.1.x",
     "vtfx": "https://github.com/mapbox/vtfx/tarball/master"
   },
   "devDependencies": {
-    "mocha": "1.21.4"
+    "tape": "3.0.x"
   },
   "scripts": {
-    "test": "mocha -R spec"
+    "test": "tape test/*.js"
   },
   "engines": {
     "node": "0.10.x"

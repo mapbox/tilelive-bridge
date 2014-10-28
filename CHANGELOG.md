@@ -1,5 +1,14 @@
 # Changlog
 
+## 1.1.0
+
+ - More efficient featureset iteration in getIndexableDocs from @manubb
+ - Drop tolerance for vector tile encoding to 8 to better support GL rendering
+
+## 1.0.0
+
+ - Update to node-mapnik@3.0.0, requires C++11 support.
+
 ## 0.6.0
 
  - Non-optional gzip compression for output VTs
