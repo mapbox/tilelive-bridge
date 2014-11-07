@@ -309,12 +309,6 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                     return callback(null, docs, pointer);
                 }
 
-<<<<<<< HEAD
-=======
-                // Skip over features if not yet paged to offset.
-                if (i < pointer.offset) return ++i && immediate(feature);
-
->>>>>>> geometry-zxy
                 var doc = f.attributes();
                 if (!doc[field]) return ++i && immediate(feature);
                 doc._id = f.id();
@@ -339,45 +333,7 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                     ];
                 }
                 if (doc._bbox[0] === doc._bbox[2]) delete doc._bbox;
-<<<<<<< HEAD
-                docs.push(doc);
-                var t = sm.xyz(f.extent(), zoom, false, srs);
-                var x = t.minX;
-                var y = t.minY;
-                if (t.maxX < t.minX) t.maxX = t.minX;
-                if (t.maxY < t.minY) t.maxY = t.minY;
-                var c = (t.maxX - t.minX + 1) * (t.maxY - t.minY + 1);
-                function tiles() {
-                    if (x > t.maxX && y > t.maxY) {
-                        return ++i && immediate(function() {
-                            feature();
-                        });
-                    }
-                    if (y > t.maxY && ++x) {
-                        y = t.minY;
-                    }
-                    var key = zoom + '/' + x + '/' + y;
 
-                    // Features must cover > 2 tiles to have false positives.
-                    if (c < 3 || cache[key]) {
-                        if (c < 3 || cache[key][doc._id]) doc._zxy.push(key);
-                        y++;
-                        return tiles();
-                    }
-
-                    cache[key] = {};
-                    map.extent = sm.bbox(x,y,zoom,false,'900913');
-                    map.render(new mapnik.VectorTile(zoom,x,y), {}, function(err, vtile) {
-                        if (err) return callback(err);
-                        var json = vtile.toJSON();
-                        json.forEach(function(l) {
-                            if (l.name !== layer.name) return;
-                            for (var i = 0; i < l.features.length; i++) {
-                                cache[key][l.features[i].id] = true;
-                            }
-                        });
-                        immediate(function() { tiles(); });
-=======
                 var geom = f.geometry();
                 if (srs == "+init=epsg:4326") {
                     geom.toJSON(function(err,json_string) {
@@ -395,7 +351,6 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                         docs.push(doc);
                         i++;
                         immediate(feature);
->>>>>>> geometry-zxy
                     });
                 }
             }
