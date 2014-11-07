@@ -253,7 +253,7 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
     tape('indexes', function(assert) {
         source.getIndexableDocs({ limit:10 }, function(err, docs, pointer) {
             assert.ifError(err);
-            assert.deepEqual({offset:10, limit:10}, pointer);
+            assert.deepEqual({featureset: {}, limit:10}, pointer);
             assert.deepEqual([
                 'Antigua and Barbuda',
                 'Algeria',
@@ -304,7 +304,7 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
             assert.deepEqual([ -61.78694500000003, 17.3641645000001 ], docs[0]._center);
             source.getIndexableDocs(pointer, function(err, docs, pointer) {
                 assert.ifError(err);
-                assert.deepEqual({offset:20, limit:10}, pointer);
+                assert.deepEqual({featureset: {}, limit:10}, pointer);
                 assert.deepEqual([
                     'Barbados',
                     'Bermuda',

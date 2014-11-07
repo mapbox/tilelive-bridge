@@ -154,8 +154,8 @@ Bridge.getRaster = function(source, map, z, x, y, callback) {
 
 Bridge.getVector = function(source, map, z, x, y, callback) {
     var opts = {};
-    // use tolerance of 32 for zoom levels below max
-    opts.tolerance = z < source._maxzoom ? 32 : 0;
+    // use tolerance of 8 for zoom levels below max
+    opts.tolerance = z < source._maxzoom ? 8 : 0;
 
     var headers = {};
     headers['Content-Type'] = 'application/x-protobuf';
@@ -204,6 +204,7 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
 
 Bridge.prototype.getInfo = function(callback) {
     if (!this._map) return callback(new Error('Tilesource not loaded'));
+
     this._map.acquire(function(err, map) {
         if (err) return callback(err);
 
@@ -264,7 +265,6 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
 
     pointer = pointer || {};
     pointer.limit = pointer.limit || 10000;
-    pointer.offset = pointer.offset || 0;
 
     var source = this;
     var knownsrs = {
@@ -291,22 +291,21 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
             if (!knownsrs[layer.srs]) return callback(new Error('Unknown layer SRS'));
 
             var srs = knownsrs[layer.srs];
-            var featureset = layer.datasource.featureset();
+            if (!pointer.featureset) pointer.featureset = layer.datasource.featureset();
+            var featureset = pointer.featureset;
             var params = layer.datasource.parameters();
             var docs = [];
             var cache = {};
             var i = 0;
 
             function feature() {
-                if (i === pointer.offset + pointer.limit) {
-                    pointer.offset = pointer.offset + pointer.limit;
+                if (i === pointer.limit) {
                     return callback(null, docs, pointer);
                 }
 
                 var f = featureset.next();
 
                 if (!f) {
-                    pointer.offset = i;
                     return callback(null, docs, pointer);
                 }
 
