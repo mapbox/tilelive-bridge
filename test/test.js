@@ -204,7 +204,7 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
         tape('setup', function(assert) {
             sources[source].open(function(err) {
                 assert.ifError(err);
-                assert.end()
+                assert.end();
             });
         });
     });
@@ -266,29 +266,42 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
                 'Australia',
                 'Bahrain'
             ], docs.map(function(d) { return d.NAME }));
-            assert.deepEqual({
-                AREA: 44,
-                FIPS: 'AC',
-                ISO2: 'AG',
-                ISO3: 'ATG',
-                LAT: 17.078,
-                LON: -61.783,
-                NAME: 'Antigua and Barbuda',
-                POP2005: 83039,
-                REGION: 19,
-                SUBREGION: 29,
-                UN: 28,
-                _id: 1,
-                _zxy: [ '8/83/115', '8/84/115', '8/85/115' ],
-                _text: 'Antigua and Barbuda',
-                _bbox: [
+            assert.equal(44, docs[0].AREA);
+            assert.equal('AC', docs[0].FIPS);
+            assert.equal('AG', docs[0].ISO2);
+            assert.equal('ATG', docs[0].ISO3);
+            assert.equal(17.078, docs[0].LAT);
+            assert.equal(-61.783, docs[0].LON);
+            assert.equal('Antigua and Barbuda', docs[0].NAME);
+            assert.equal(83039, docs[0].POP2005);
+            assert.equal(19, docs[0].REGION);
+            assert.equal(29, docs[0].SUBREGION);
+            assert.equal(28, docs[0].UN);
+            assert.equal(1, docs[0]._id);
+            
+            var coordinates = [[[[-61.686668,17.0244410000002],[-61.887222,17.105274],[-61.7944489999999,17.1633300000001],[-61.686668,17.0244410000002]]],[[[-61.7291719999999,17.608608],[-61.853058,17.5830540000001],[-61.873062,17.7038880000001],[-61.7291719999999,17.608608]]]];
+            for(var i = 0; i < docs[0]._geometry.coordinates.length; i++) {
+                var poly = docs[0]._geometry.coordinates[i];
+                for(var k = 0; k < poly.length; k++) {
+                    var ring = poly[k];
+                    for(var j = 0; j < ring.length; j++) {
+                        var pair = ring[j];
+                        var lonDiff = Math.abs(pair[0] - coordinates[i][k][j][0]);
+                        var latDiff = Math.abs(pair[1] - coordinates[i][k][j][1]);
+                        assert.equal(true, lonDiff < 0.0000000000001);
+                        assert.equal(true, latDiff < 0.0000000000001);
+                    }
+                }
+            }
+                
+            assert.equal('Antigua and Barbuda', docs[0]._text);
+            assert.deepEqual([
                     -61.88722200000002,
                     17.02444100000014,
                     -61.68666800000004,
                     17.703888000000063
-                ],
-                _center: [ -61.78694500000003, 17.3641645000001 ]
-            }, docs[0]);
+                ], docs[0]._bbox);
+            assert.deepEqual([ -61.78694500000003, 17.3641645000001 ], docs[0]._center);
             source.getIndexableDocs(pointer, function(err, docs, pointer) {
                 assert.ifError(err);
                 assert.deepEqual({featureset: {}, limit:10}, pointer);

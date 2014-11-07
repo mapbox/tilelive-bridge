@@ -1,5 +1,10 @@
 # Changlog
 
+## 1.2.0
+
+ - Update to node-mapnik@3.1.0
+ - Automatically reproject data to WGS84 in geIndexableDocs
+
 ## 1.1.0
 
  - More efficient featureset iteration in getIndexableDocs from @manubb

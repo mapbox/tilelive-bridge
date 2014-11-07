@@ -268,9 +268,9 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
 
     var source = this;
     var knownsrs = {
-        '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over': '900913',
-        '+proj=merc +lon_0=0 +lat_ts=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs': '900913',
-        '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs': 'WGS84'
+        '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over': '+init=epsg:3857',
+        '+proj=merc +lon_0=0 +lat_ts=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs': '+init=epsg:3857',
+        '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs': '+init=epsg:4326'
     };
 
     source.getInfo(function(err, info) {
@@ -304,16 +304,20 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                 }
 
                 var f = featureset.next();
+
                 if (!f) {
                     return callback(null, docs, pointer);
                 }
 
+<<<<<<< HEAD
+=======
+                // Skip over features if not yet paged to offset.
+                if (i < pointer.offset) return ++i && immediate(feature);
+
+>>>>>>> geometry-zxy
                 var doc = f.attributes();
-                if (!doc[field]) return ++i && immediate(function() {
-                    feature();
-                });
+                if (!doc[field]) return ++i && immediate(feature);
                 doc._id = f.id();
-                doc._zxy = [];
                 doc._text = doc[field];
                 if (typeof doc._bbox === 'string') {
                     doc._bbox = doc._bbox.split(',');
@@ -335,6 +339,7 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                     ];
                 }
                 if (doc._bbox[0] === doc._bbox[2]) delete doc._bbox;
+<<<<<<< HEAD
                 docs.push(doc);
                 var t = sm.xyz(f.extent(), zoom, false, srs);
                 var x = t.minX;
@@ -372,12 +377,30 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                             }
                         });
                         immediate(function() { tiles(); });
+=======
+                var geom = f.geometry();
+                if (srs == "+init=epsg:4326") {
+                    geom.toJSON(function(err,json_string) {
+                        doc._geometry = JSON.parse(json_string);
+                        docs.push(doc);
+                        i++;
+                        immediate(feature);
+                    });
+                } else {
+                    var from = new mapnik.Projection(srs);
+                    var to = new mapnik.Projection("+init=epsg:4326");
+                    var tr = new mapnik.ProjTransform(from,to);
+                    geom.toJSON({transform:tr},function(err,json_string) {
+                        doc._geometry = JSON.parse(json_string);
+                        docs.push(doc);
+                        i++;
+                        immediate(feature);
+>>>>>>> geometry-zxy
                     });
                 }
-                tiles();
             }
+
             feature();
         });
     });
 };
-
