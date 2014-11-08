@@ -15,7 +15,8 @@
   "dependencies": {
     "mapnik": "~3.1.0",
     "sphericalmercator": "1.0.x",
-    "mapnik-pool": "0.1.x"
+    "mapnik-pool": "0.1.x",
+    "vtfx": "https://github.com/mapbox/vtfx/tarball/master"
   },
   "devDependencies": {
     "tape": "3.0.x"

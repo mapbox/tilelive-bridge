@@ -8,8 +8,9 @@ var UPDATE = process.env.UPDATE;
 
 // Load fixture data.
 var xml = {
-    a: fs.readFileSync(path.resolve(path.join(__dirname,'/test-a.xml')), 'utf8'),
-    b: fs.readFileSync(path.resolve(path.join(__dirname,'/test-b.xml')), 'utf8')
+    a: fs.readFileSync(path.resolve(path.join(__dirname + '/test-a.xml')), 'utf8'),
+    b: fs.readFileSync(path.resolve(path.join(__dirname + '/test-b.xml')), 'utf8'),
+    c: fs.readFileSync(path.resolve(path.join(__dirname + '/test-c.xml')), 'utf8')
 };
 var rasterxml = {
     a: fs.readFileSync(path.resolve(path.join(__dirname,'/raster-a.xml')), 'utf8')
@@ -131,14 +132,16 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
 
 (function() {
     var sources = {
-        a: new Bridge({ xml:xml.a, base:path.join(__dirname,'/'), blank:true }),
-        b: new Bridge({ xml:xml.b, base:path.join(__dirname,'/') }),
-        c: new Bridge({ xml:xml.a, base:path.join(__dirname,'/'), blank:false })
+        a: new Bridge({ xml:xml.a, base:path.join(__dirname + '/'), blank:true }),
+        b: new Bridge({ xml:xml.b, base:path.join(__dirname + '/') }),
+        c: new Bridge({ xml:xml.a, base:path.join(__dirname + '/'), blank:false }),
+        d: new Bridge({ xml:xml.c, base:path.join(__dirname + '/') })
     };
     var tests = {
         a: ['0.0.0', '1.0.0', '1.0.1', {key:'10.0.0',empty:true}, {key:'10.765.295',empty:true}],
         b: ['0.0.0'],
-        c: [{key:'10.0.0',empty:true}, {key:'10.765.295', solid:'217,222,32,1'}]
+        c: [{key:'10.0.0',empty:true}, {key:'10.765.295', solid:'217,222,32,1'}],
+        d: [{key:'0.0.0', vtfx:true}, {key:'10.765.295', vtfx:true}]
     };
     Object.keys(tests).forEach(function(source) {
         tape('setup', function(assert) {
