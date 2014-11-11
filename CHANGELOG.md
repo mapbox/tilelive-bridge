@@ -1,5 +1,10 @@
 # Changlog
 
+## 1.2.1
+
+ - Fix for edgecase bug in pixel_key generation
+ - Remove check for xml differences before updating map
+
 ## 1.2.0
 
  - Update to node-mapnik@3.1.0
