@@ -8,7 +8,9 @@
         "_lfromhn": "1,101",
         "_ltohn": "99,199",
         "_rfromhn": "0,100",
-        "_rtohn": "98,198"
+        "_rtohn": "98,198",
+        "_parityr": "E,E",
+        "_parityl": "O,O"
       },
       "geometry": {
         "type": "MultiLineString",

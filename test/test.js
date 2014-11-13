@@ -344,6 +344,8 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
             assert.deepEqual(docs[0]._ltohn, ['99','199']);
             assert.deepEqual(docs[0]._rfromhn, ['0','100']);
             assert.deepEqual(docs[0]._rtohn, ['98','198']);
+            assert.deepEqual(docs[0]._parityr, ['E', 'E']);
+            assert.deepEqual(docs[0]._parityl, ['O', 'O']);
             assert.end();
         });
     });
