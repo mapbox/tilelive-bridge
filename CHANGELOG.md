@@ -1,5 +1,9 @@
 # Changlog
 
+## 1.2.2
+
+ - Handle interpolation keys when indexing carmen docs
+
 ## 1.2.1
 
  - Fix for edgecase bug in pixel_key generation
