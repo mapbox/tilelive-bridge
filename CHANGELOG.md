@@ -1,5 +1,9 @@
 # Changlog
 
+## 1.2.3
+
+ - Double tap interpolation (missed parity flag)
+
 ## 1.2.2
 
  - Handle interpolation keys when indexing carmen docs
