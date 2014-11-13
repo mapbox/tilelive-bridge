@@ -9,7 +9,8 @@ var UPDATE = process.env.UPDATE;
 // Load fixture data.
 var xml = {
     a: fs.readFileSync(path.resolve(path.join(__dirname,'/test-a.xml')), 'utf8'),
-    b: fs.readFileSync(path.resolve(path.join(__dirname,'/test-b.xml')), 'utf8')
+    b: fs.readFileSync(path.resolve(path.join(__dirname,'/test-b.xml')), 'utf8'),
+    itp: fs.readFileSync(path.resolve(path.join(__dirname,'/itp.xml')), 'utf8')
 };
 var rasterxml = {
     a: fs.readFileSync(path.resolve(path.join(__dirname,'/raster-a.xml')), 'utf8')
@@ -324,6 +325,26 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
 
                 assert.end();
             });
+        });
+    });
+    tape('itp setup', function(assert) {
+        new Bridge({ xml:xml.itp, base:path.join(__dirname,'/') }, function(err, s) {
+            if (err) return done(err);
+            source = s;
+            assert.end();
+        });
+    });
+    tape('itp indexes', function(assert) {
+        source.getIndexableDocs({ limit:10 }, function(err, docs, pointer) {
+            assert.ifError(err);
+            assert.deepEqual({featureset: {}, limit:10}, pointer);
+            assert.equal(docs[0]._text, 'Test Street');
+            assert.equal(docs[0]._id, 1);
+            assert.deepEqual(docs[0]._lfromhn, ['1','101']);
+            assert.deepEqual(docs[0]._ltohn, ['99','199']);
+            assert.deepEqual(docs[0]._rfromhn, ['0','100']);
+            assert.deepEqual(docs[0]._rtohn, ['98','198']);
+            assert.end();
         });
     });
 })();

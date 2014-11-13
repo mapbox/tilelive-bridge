@@ -1,0 +1,40 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Test Street",
+        "_lfromhn": "1,101",
+        "_ltohn": "99,199",
+        "_rfromhn": "0,100",
+        "_rtohn": "98,198"
+      },
+      "geometry": {
+        "type": "MultiLineString",
+        "coordinates": [
+          [
+            [
+              0,
+              0
+            ],
+            [
+              10,
+              0
+            ]
+          ],
+          [
+            [
+              10,
+              0
+            ],
+            [
+              20,
+              0
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}
