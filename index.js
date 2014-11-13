@@ -318,6 +318,12 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                 } else {
                     doc._bbox = doc._bbox || (srs === 'WGS84' ? f.extent() : sm.convert(f.extent(), 'WGS84'));
                 }
+
+                if (typeof doc._lfromhn === 'string') doc._lfromhn = doc._lfromhn.split(',');
+                if (typeof doc._ltohn === 'string') doc._ltohn = doc._ltohn.split(',');
+                if (typeof doc._rfromhn === 'string') doc._rfromhn = doc._rfromhn.split(',');
+                if (typeof doc._rtohn === 'string') doc._rtohn = doc._rtohn.split(',');
+
                 if (typeof doc._center === 'string') {
                     doc._center = doc._center.split(',');
                     doc._center[0] = parseFloat(doc._center[0]);
