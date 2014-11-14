@@ -7,6 +7,8 @@ var fs = require('fs');
 var qs = require('querystring');
 var sm = new (require('sphericalmercator'))();
 var immediate = global.setImmediate || process.nextTick;
+var queue = require('queue-async');
+var cpus = require('os').cpus.length;
 
 // Register datasource plugins
 mapnik.register_default_input_plugins();
@@ -269,97 +271,93 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
         '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs': '+init=epsg:4326'
     };
 
-    source.getInfo(function(err, info) {
+    source._map.acquire(function (err, map) {
         if (err) return callback(err);
-        source._map.acquire(function(err, map) {
+        immediate(function() { source._map.release(map); });
+
+        var name = (map.parameters.geocoder_layer||'').split('.').shift() || '';
+        var field = (map.parameters.geocoder_layer||'').split('.').pop() || '_text';
+        var zoom = parseInt(map.parameters.maxzoom,10) + parseInt(map.parameters.geocoder_resolution||0, 10);
+        var layer = name ?
+            map.layers().filter(function(l) { return l.name === name })[0] :
+            map.layers()[0];
+
+        if (!zoom) return callback(new Error('No geocoding zoom defined'));
+        if (!layer) return callback(new Error('No geocoding layer found'));
+        if (!knownsrs[layer.srs]) return callback(new Error('Unknown layer SRS'));
+
+        var srs = knownsrs[layer.srs];
+        if (!pointer.featureset) pointer.featureset = layer.datasource.featureset();
+        var featureset = pointer.featureset;
+        var params = layer.datasource.parameters();
+        var cache = {};
+        var q = queue(cpus);
+
+        var i = 0;
+        while (i < pointer.limit) {
+            var f = featureset.next();
+            if (!f) break;
+            q.defer(feature, f);
+            i++;
+        }
+        q.awaitAll(function(err, results) {
             if (err) return callback(err);
-            immediate(function() { source._map.release(map); });
-
-            var name = (map.parameters.geocoder_layer||'').split('.').shift() || '';
-            var field = (map.parameters.geocoder_layer||'').split('.').pop() || '_text';
-            var zoom = info.maxzoom + parseInt(map.parameters.geocoder_resolution||0, 10);
-            var layer = name ?
-                map.layers().filter(function(l) { return l.name === name })[0] :
-                map.layers()[0];
-
-            if (!zoom) return callback(new Error('No geocoding zoom defined'));
-            if (!layer) return callback(new Error('No geocoding layer found'));
-            if (!knownsrs[layer.srs]) return callback(new Error('Unknown layer SRS'));
-
-            var srs = knownsrs[layer.srs];
-            if (!pointer.featureset) pointer.featureset = layer.datasource.featureset();
-            var featureset = pointer.featureset;
-            var params = layer.datasource.parameters();
             var docs = [];
-            var cache = {};
-            var i = 0;
+            for (var i = 0; i < results.length; i++) {
+                if (results[i]) docs.push(results[i]);
+            }
+            return callback(null, docs, pointer);
+        });
 
-            function feature() {
-                if (i === pointer.limit) {
-                    return callback(null, docs, pointer);
-                }
-
-                var f = featureset.next();
-
-                if (!f) {
-                    return callback(null, docs, pointer);
-                }
-
-                var doc = f.attributes();
-                if (!doc[field]) return ++i && immediate(feature);
-                doc._id = f.id();
-                doc._text = doc[field];
-                if (typeof doc._bbox === 'string') {
-                    doc._bbox = doc._bbox.split(',');
-                    doc._bbox[0] = parseFloat(doc._bbox[0]);
-                    doc._bbox[1] = parseFloat(doc._bbox[1]);
-                    doc._bbox[2] = parseFloat(doc._bbox[2]);
-                    doc._bbox[3] = parseFloat(doc._bbox[3]);
-                } else {
-                    doc._bbox = doc._bbox || (srs === 'WGS84' ? f.extent() : sm.convert(f.extent(), 'WGS84'));
-                }
-
-                if (typeof doc._lfromhn === 'string') doc._lfromhn = doc._lfromhn.split(',');
-                if (typeof doc._ltohn === 'string') doc._ltohn = doc._ltohn.split(',');
-                if (typeof doc._rfromhn === 'string') doc._rfromhn = doc._rfromhn.split(',');
-                if (typeof doc._rtohn === 'string') doc._rtohn = doc._rtohn.split(',');
-                if (typeof doc._parityr === 'string') doc._parityr = doc._parityr.split(',');
-                if (typeof doc._parityl === 'string') doc._parityl = doc._parityl.split(','); 
-
-                if (typeof doc._center === 'string') {
-                    doc._center = doc._center.split(',');
-                    doc._center[0] = parseFloat(doc._center[0]);
-                    doc._center[1] = parseFloat(doc._center[1]);
-                } else {
-                    doc._center = [
-                        doc._bbox[0] + (doc._bbox[2]-doc._bbox[0])*0.5,
-                        doc._bbox[1] + (doc._bbox[3]-doc._bbox[1])*0.5
-                    ];
-                }
-                if (doc._bbox[0] === doc._bbox[2]) delete doc._bbox;
-
-                var geom = f.geometry();
-                if (srs == "+init=epsg:4326") {
-                    geom.toJSON(function(err,json_string) {
-                        doc._geometry = JSON.parse(json_string);
-                        docs.push(doc);
-                        i++;
-                        immediate(feature);
-                    });
-                } else {
-                    var from = new mapnik.Projection(srs);
-                    var to = new mapnik.Projection("+init=epsg:4326");
-                    var tr = new mapnik.ProjTransform(from,to);
-                    geom.toJSON({transform:tr},function(err,json_string) {
-                        doc._geometry = JSON.parse(json_string);
-                        docs.push(doc);
-                        i++;
-                        immediate(feature);
-                    });
-                }
+        function feature(f, done) {
+            var doc = f.attributes();
+            if (!doc[field]) return done();
+            doc._id = f.id();
+            doc._text = doc[field];
+            if (typeof doc._bbox === 'string') {
+                doc._bbox = doc._bbox.split(',');
+                doc._bbox[0] = parseFloat(doc._bbox[0]);
+                doc._bbox[1] = parseFloat(doc._bbox[1]);
+                doc._bbox[2] = parseFloat(doc._bbox[2]);
+                doc._bbox[3] = parseFloat(doc._bbox[3]);
+            } else {
+                doc._bbox = doc._bbox || (srs === '+init=epsg:4326' ? f.extent() : sm.convert(f.extent(), 'WGS84'));
             }
 
-            feature();
-        });
+            if (typeof doc._lfromhn === 'string') doc._lfromhn = doc._lfromhn.split(',');
+            if (typeof doc._ltohn === 'string') doc._ltohn = doc._ltohn.split(',');
+            if (typeof doc._rfromhn === 'string') doc._rfromhn = doc._rfromhn.split(',');
+            if (typeof doc._rtohn === 'string') doc._rtohn = doc._rtohn.split(',');
+            if (typeof doc._parityr === 'string') doc._parityr = doc._parityr.split(',');
+            if (typeof doc._parityl === 'string') doc._parityl = doc._parityl.split(',');
+
+            if (typeof doc._center === 'string') {
+                doc._center = doc._center.split(',');
+                doc._center[0] = parseFloat(doc._center[0]);
+                doc._center[1] = parseFloat(doc._center[1]);
+            } else {
+                doc._center = [
+                    doc._bbox[0] + (doc._bbox[2]-doc._bbox[0])*0.5,
+                    doc._bbox[1] + (doc._bbox[3]-doc._bbox[1])*0.5
+                ];
+            }
+            if (doc._bbox[0] === doc._bbox[2]) delete doc._bbox;
+
+            var geom = f.geometry();
+            if (srs == "+init=epsg:4326") {
+                geom.toJSON(function(err,json_string) {
+                    doc._geometry = JSON.parse(json_string);
+                    done(null, doc);
+                });
+            } else {
+                var from = new mapnik.Projection(srs);
+                var to = new mapnik.Projection("+init=epsg:4326");
+                var tr = new mapnik.ProjTransform(from,to);
+                geom.toJSON({transform:tr},function(err,json_string) {
+                    doc._geometry = JSON.parse(json_string);
+                    done(null, doc);
+                });
+            }
+        }
     });
 };

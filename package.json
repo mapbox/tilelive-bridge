@@ -15,7 +15,8 @@
   "dependencies": {
     "mapnik": "~3.1.0",
     "sphericalmercator": "1.0.x",
-    "mapnik-pool": "0.1.x"
+    "mapnik-pool": "0.1.x",
+    "queue-async": "1.0.x"
   },
   "devDependencies": {
     "tape": "3.0.x"
