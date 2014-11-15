@@ -316,7 +316,7 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                     doc._bbox[2] = parseFloat(doc._bbox[2]);
                     doc._bbox[3] = parseFloat(doc._bbox[3]);
                 } else {
-                    doc._bbox = doc._bbox || (srs === 'WGS84' ? f.extent() : sm.convert(f.extent(), 'WGS84'));
+                    doc._bbox = doc._bbox || (srs === '+init=epsg:4326' ? f.extent() : sm.convert(f.extent(), 'WGS84'));
                 }
 
                 if (typeof doc._lfromhn === 'string') doc._lfromhn = doc._lfromhn.split(',');

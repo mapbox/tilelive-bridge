@@ -340,6 +340,8 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
             assert.deepEqual({featureset: {}, limit:10}, pointer);
             assert.equal(docs[0]._text, 'Test Street');
             assert.equal(docs[0]._id, 1);
+            assert.deepEqual(docs[0]._center, [ 10, 10 ]);
+            assert.deepEqual(docs[0]._bbox, [ 0, 0, 20, 20 ]);
             assert.deepEqual(docs[0]._lfromhn, ['1','101']);
             assert.deepEqual(docs[0]._ltohn, ['99','199']);
             assert.deepEqual(docs[0]._rfromhn, ['0','100']);
