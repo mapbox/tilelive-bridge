@@ -260,7 +260,7 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
     if (!this._map) return callback(new Error('Tilesource not loaded'));
 
     pointer = pointer || {};
-    pointer.limit = pointer.limit || 10000;
+    pointer.limit = pointer.limit || 50000;
 
     var source = this;
     var knownsrs = {
