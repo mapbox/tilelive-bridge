@@ -1,5 +1,9 @@
 # Changlog
 
+## 1.2.4
+
+ - Fix bug with getIndexableDocs bbox generation
+
 ## 1.2.3
 
  - Double tap interpolation (missed parity flag)
