@@ -1,5 +1,9 @@
 # Changlog
 
+## 1.2.5
+
+ - Rollback getIndexableDocs limit change
+
 ## 1.2.4
 
  - Fix bug with getIndexableDocs bbox generation
