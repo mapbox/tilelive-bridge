@@ -120,9 +120,18 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
     assert.equal(vtile1.width(),vtile2.width());
     assert.equal(vtile1.height(),vtile2.height());
     assert.deepEqual(vtile1.names(),vtile2.names());
+    assert.deepEqual(vtile1.names(),vtile2.names());
+    assert.equal(vtile1.isSolid(),vtile2.isSolid());
+    assert.equal(vtile1.empty(),vtile2.empty());
     var v1 = vtile1.toJSON();
     var v2 = vtile2.toJSON();
-    assert.deepEqual(vtile1.names(),vtile2.names());
+    assert.equal(v1.length,v2.length);
+    var l1 = v1[0];
+    var l2 = v2[0];
+    assert.equal(l1.name,l2.name);
+    assert.equal(l1.version,l2.version);
+    assert.equal(l1.extent,l2.extent);
+    assert.equal(l1.features.length,l2.features.length);
     try {
       assert.deepEqual(v1,v2);
     } catch (err) {
