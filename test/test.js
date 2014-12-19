@@ -132,6 +132,7 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
     assert.equal(l1.version,l2.version);
     assert.equal(l1.extent,l2.extent);
     assert.equal(l1.features.length,l2.features.length);
+    assert.deepEqual(l1.features[0],l2.features[0]);
     try {
       assert.deepEqual(v1,v2);
     } catch (err) {
