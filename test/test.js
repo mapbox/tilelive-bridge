@@ -52,14 +52,32 @@ var rasterxml = {
         });
     });
     tape('should load query params', function(assert) {
-        new Bridge('bridge://' + path.resolve(path.join(__dirname,'/test-a.xml?blank=1')), function(err, source) {
+        new Bridge('bridge://' + path.resolve(path.join(__dirname,'/test-a.xml?blank=1&maxsize=12345678')), function(err, source) {
             assert.ifError(err);
             assert.equal(source._blank, true);
+            assert.equal(source._maxsize, 12345678);
             assert.equal(source._xml, xml.a);
             assert.equal(source._base, __dirname);
             assert.end();
         });
     });
+
+    tape('enforce maxsize parameter', function(assert) {        
+        var z=10, x=765, y=295;
+        assert.plan(3);
+        new Bridge('bridge://' + path.resolve(path.join(__dirname,'/test-a.xml?maxsize=10')), function(err, source) {            
+            source.getTile(z,x,y, function(err, buffer, headers) {                        
+                assert.ok(err !== null, 'getTile() fails with too-small maxsize param');
+                assert.ok(err.message.toLowerCase().indexOf('maximum tile size') > -1, 'getTile() throws correct error on maxsize failure');
+            });
+        });
+        new Bridge('bridge://' + path.resolve(path.join(__dirname,'/test-a.xml?maxsize=300')), function(err, source) {
+            source.getTile(z,x,y, function(err, buffer, headers) {
+                assert.ok(err === null, 'getTile() passes with adequately large maxsize param');
+            });
+        });
+    });
+
     tape('#open should call all listeners', function(assert) {
         var b = new Bridge({ xml: xml.a, base:path.join(__dirname,'/') });
         var remaining = 3;
