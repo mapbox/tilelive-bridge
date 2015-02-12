@@ -24,8 +24,12 @@ function Bridge(uri, callback) {
         var filepath = path.resolve(uri.pathname);
         fs.readFile(filepath, 'utf8', function(err, xml) {
             if (err) return callback(err);
-            var opts = Object.keys(uri.query).reduce(function(memo, key) {
-                memo[key] = !!parseInt(uri.query[key], 10);
+            var opts = Object.keys(uri.query).reduce(function(memo, key) {                
+                // only maxsize parameter may be non-boolean
+                if (key === 'maxsize')
+                    memo[key] = (!isNaN(parseInt(uri.query[key])) && isFinite(uri.query[key])) ? parseInt(uri.query[key]) : false;
+                else
+                    memo[key] = !!parseInt(uri.query[key], 10);
                 return memo;
             }, {xml:xml, base:path.dirname(filepath)});
             init(opts);
@@ -44,6 +48,9 @@ function Bridge(uri, callback) {
 
         // 'blank' option forces all solid tiles to be interpreted as blank.
         source._blank = typeof uri.blank === 'boolean' ? uri.blank : false;
+
+        // 'maxsize' option throws error if any tiles exceed threshold size
+        source._maxsize = (!isNaN(parseInt(uri.maxsize)) && isFinite(uri.maxsize)) ? parseInt(uri.maxsize) : false;
 
         if (callback) source.once('open', callback);
 
@@ -192,7 +199,12 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
                     1
                 ].join(',');
 
-                return callback(err, pbfz, headers);
+                // check maxsize criterion
+                if (source._maxsize && (pbfz.length > source._maxsize))
+                    return callback(new Error('Maximum tile size exceeded (' + pbfz.length + '/' + source._maxsize + ')'));
+                else
+                    return callback(err, pbfz, headers);
+                
             });
         });
     });
