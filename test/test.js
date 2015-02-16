@@ -13,7 +13,8 @@ var xml = {
     itp: fs.readFileSync(path.resolve(path.join(__dirname,'/itp.xml')), 'utf8')
 };
 var rasterxml = {
-    a: fs.readFileSync(path.resolve(path.join(__dirname,'/raster-a.xml')), 'utf8')
+    a: fs.readFileSync(path.resolve(path.join(__dirname,'/raster-a.xml')), 'utf8'),
+    b: fs.readFileSync(path.resolve(path.join(__dirname,'/raster-b.xml')), 'utf8')
 };
 
 (function() {
@@ -206,10 +207,12 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
 
 (function() {
     var sources = {
-        a: new Bridge({ xml:rasterxml.a, base:path.join(__dirname,'/'), blank:true })
+        a: new Bridge({ xml:rasterxml.a, base:path.join(__dirname,'/'), blank:true }),
+        b: new Bridge({ xml:rasterxml.b, base:path.join(__dirname,'/'), blank:true })
     };
     var tests = {
-        a: ['0.0.0', '1.0.0']
+        a: ['0.0.0', '1.0.0'],
+        b: ['0.0.0', '1.0.0']
     };
     Object.keys(tests).forEach(function(source) {
         tape('setup', function(assert) {
