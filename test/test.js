@@ -185,7 +185,7 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
                         assert.ifError(err);
 
                         var filepath = path.join(__dirname,'/expected/' + source + '.' + key + '.vector.pbf');
-                        if (UPDATE) fs.writeFileSync(filepath, buffer);
+                        if (UPDATE || !fs.existsSync(filepath)) fs.writeFileSync(filepath, buffer);
 
                         var expected = fs.readFileSync(filepath);
                         var vtile1 = new mapnik.VectorTile(+z,+x,+y);
@@ -243,7 +243,7 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
                     if (obj.solid) assert.equal(buffer.solid, obj.solid);
 
                     var filepath = path.join(__dirname,'/expected-raster/' + source + '.' + key + '.webp');
-                    if (UPDATE) fs.writeFileSync(filepath, buffer);
+                    if (UPDATE || !fs.existsSync(filepath)) fs.writeFileSync(filepath, buffer);
 
                     var resultImage = new mapnik.Image.fromBytesSync(buffer);
                     var expectImage = new mapnik.Image.fromBytesSync(fs.readFileSync(filepath));
