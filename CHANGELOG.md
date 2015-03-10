@@ -1,5 +1,9 @@
 # Changlog
 
+## 1.2.6
+
+ - Drain the mapnik-pool before destroying it during .close()
+ 
 ## 1.2.5
 
  - Rollback getIndexableDocs limit change
