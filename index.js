@@ -83,8 +83,14 @@ Bridge.prototype.update = function(opts, callback) {
 };
 
 Bridge.prototype.close = function(callback) {
-    if (!this._map) return callback();
-    this._map.destroyAllNow(callback);
+    var _map = this._map;
+
+    if (!_map) return callback();
+
+    _map.drain(function() {
+        _map.destroyAllNow(callback);
+    });
+
 };
 
 Bridge.prototype.getTile = function(z, x, y, callback) {
@@ -324,7 +330,7 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                 if (typeof doc._rfromhn === 'string') doc._rfromhn = doc._rfromhn.split(',');
                 if (typeof doc._rtohn === 'string') doc._rtohn = doc._rtohn.split(',');
                 if (typeof doc._parityr === 'string') doc._parityr = doc._parityr.split(',');
-                if (typeof doc._parityl === 'string') doc._parityl = doc._parityl.split(','); 
+                if (typeof doc._parityl === 'string') doc._parityl = doc._parityl.split(',');
 
                 if (typeof doc._center === 'string') {
                     doc._center = doc._center.split(',');
