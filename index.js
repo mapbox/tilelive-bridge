@@ -231,12 +231,6 @@ Bridge.prototype.getInfo = function(callback) {
             case 'center':
                 memo[key] = params[key].split(',').map(function(v) { return parseFloat(v) });
                 break;
-            case 'minzoom':
-            case 'maxzoom':
-            case 'geocoder_shardlevel':
-            case 'geocoder_resolution':
-                memo[key] = parseInt(params[key], 10);
-                break;
             default:
                 memo[key] = params[key];
                 break;
