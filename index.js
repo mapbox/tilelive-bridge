@@ -177,18 +177,22 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
             if (err) return callback(err);
 
             var buffer = image.getData();
-            zlib.gzip(buffer, function(err, pbfz) {
-                if (err) return callback(err);
+            // we no longer need the vtile data, so purge it now
+            // to keep memory low and trigger less gc churn
+            image.clear(function(err) {
+                zlib.gzip(buffer, function(err, pbfz) {
+                    if (err) return callback(err);
 
-                headers['Content-Encoding'] = 'gzip';
+                    headers['Content-Encoding'] = 'gzip';
 
-                // Solid handling.
-                if (solid === false) return callback(err, pbfz, headers);
+                    // Solid handling.
+                    if (solid === false) return callback(err, pbfz, headers);
 
-                // Empty tiles are equivalent to no tile.
-                if (source._blank || !key) return callback(new Error('Tile does not exist'));
+                    // Empty tiles are equivalent to no tile.
+                    if (source._blank || !key) return callback(new Error('Tile does not exist'));
 
-                return callback(err, pbfz, headers);
+                    return callback(err, pbfz, headers);
+                });
             });
         });
     });
