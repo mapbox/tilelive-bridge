@@ -157,13 +157,17 @@ Bridge.getRaster = function(source, map, z, x, y, callback) {
 Bridge.getVector = function(source, map, z, x, y, callback) {
     var opts = {};
     // use tolerance of 8 for zoom levels below max
-    opts.tolerance = z < source._maxzoom ? 8 : 0;
+    opts.tolerance = z < source._maxzoom ? 0 : 0;
 
     var headers = {};
     headers['Content-Type'] = 'application/x-protobuf';
 
     map.resize(256, 256);
     map.extent = sm.bbox(+x,+y,+z, false, '900913');
+
+    var simplify_distance = 1 / 256 / (map.extent[2] - map.extent[0]);
+    opts.simplify_distance = z < source._maxzoom ? simplify_distance : 0;
+
     // also pass buffer_size in options to be forward compatible with recent node-mapnik
     // https://github.com/mapnik/node-mapnik/issues/175
     opts.buffer_size = map.bufferSize;
