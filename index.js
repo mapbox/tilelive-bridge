@@ -155,8 +155,6 @@ Bridge.getRaster = function(source, map, z, x, y, callback) {
 
 Bridge.getVector = function(source, map, z, x, y, callback) {
     var opts = {};
-    // use tolerance of 8 for zoom levels below max
-    opts.tolerance = z < source._maxzoom ? 0 : 0;
 
     var headers = {};
     headers['Content-Type'] = 'application/x-protobuf';
@@ -164,10 +162,30 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
     map.resize(256, 256);
     map.extent = sm.bbox(+x,+y,+z, false, '900913');
 
-    var tile_pixel_width = 4096;
-    var tile_width = (map.extent[2] - map.extent[0]);
-    var simplify_distance = (z+2) * (tile_width/tile_pixel_width);
-    opts.simplify_distance = z < source._maxzoom ? simplify_distance : 0;
+    /*
+        Simplification works to generalize geometries before encoding into vector tiles.
+
+        The 'simplify_distance' value works in integer space over a 4096 pixel grid and uses
+        the Douglas–Peucker algorithm.
+
+        The 4096 results from the path_multiplier used to maintain precision (default of 16)
+        and tile width (default of 256)
+
+        A simplify_distance of <= 0 disables the DP simplification in mapnik-vector-tile, however
+        be aware that geometries will still end up being generalized based on conversion to integers during encoding.
+
+        The greater the value the higher the level of generalization.
+
+        The goal is to simplify enough to reduce the encoded geometry size without noticeable visual impact.
+
+        A value of 8 is used below maxzoom. This was chosen arbitrarily.
+
+        A value of 1 is used at maxzoom and above. The idea is that 1 will throw out nearly coincident points while
+        having negligible visual impact even if the tile is overzoomed (but this warrants more testing).
+    */
+    opts.simplify_distance = z < source._maxzoom ? 8 : 1;
+    // This is the default path_multiplier - it is not recommended to change this
+    opts.path_multiplier = 16;
 
     // also pass buffer_size in options to be forward compatible with recent node-mapnik
     // https://github.com/mapnik/node-mapnik/issues/175
