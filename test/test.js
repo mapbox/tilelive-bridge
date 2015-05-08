@@ -150,7 +150,7 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
     var tests = {
         a: ['0.0.0', '1.0.0', '1.0.1', {key:'10.0.0',empty:true}, {key:'10.765.295',empty:true}],
         b: ['0.0.0'],
-        c: [{key:'10.0.0',empty:true}, {key:'10.765.295', solid:'217,222,32,1'}]
+        c: [{key:'10.0.0',empty:true}, {key:'10.765.295', solid:'world'}]
     };
     Object.keys(tests).forEach(function(source) {
         tape('setup', function(assert) {
