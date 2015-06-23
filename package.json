@@ -18,7 +18,8 @@
     "mapnik-pool": "0.1.x"
   },
   "devDependencies": {
-    "tape": "3.0.x"
+    "tape": "3.0.x",
+    "deep-equal": "~1.0.0"
   },
   "scripts": {
     "test": "tape test/*.js"

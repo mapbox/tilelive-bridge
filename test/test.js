@@ -5,6 +5,7 @@ var mapnik = require('mapnik');
 var zlib = require('zlib');
 var tape = require('tape');
 var UPDATE = process.env.UPDATE;
+var deepEqual = require('deep-equal');
 
 // Load fixture data.
 var xml = {
@@ -109,14 +110,6 @@ var rasterxml = {
     });
 })();
 
-function show_json(filepath,vtile1,vtile2) {
-    var e = filepath+'.expected.json';
-    var a = filepath+'.actual.json';
-    fs.writeFileSync(e,JSON.stringify(vtile1,null,2));
-    fs.writeFileSync(a,JSON.stringify(vtile2,null,2));
-    throw new Error('files json representations differs: \n'+e + '\n' + a + '\n');
-}
-
 function compare_vtiles(assert,filepath,vtile1,vtile2) {
     assert.equal(vtile1.width(),vtile2.width());
     assert.equal(vtile1.height(),vtile2.height());
@@ -134,10 +127,12 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
     assert.equal(l1.extent,l2.extent);
     assert.equal(l1.features.length,l2.features.length);
     assert.deepEqual(l1.features[0],l2.features[0]);
-    try {
-      assert.deepEqual(v1,v2);
-    } catch (err) {
-      show_json(filepath,v1,v2);
+    if (!deepEqual(v1,v2)) {
+        var e = filepath+'.expected.json';
+        var a = filepath+'.actual.json';
+        fs.writeFileSync(e,JSON.stringify(JSON.parse(vtile1.toGeoJSON('__all__')),null,2));
+        fs.writeFileSync(a,JSON.stringify(JSON.parse(vtile2.toGeoJSON('__all__')),null,2));
+        assert.ok(false,'files json representations differs: \n'+e + '\n' + a + '\n');
     }
 }
 
