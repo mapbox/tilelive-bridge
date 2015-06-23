@@ -5,6 +5,7 @@ var mapnik = require('mapnik');
 var zlib = require('zlib');
 var tape = require('tape');
 var UPDATE = process.env.UPDATE;
+var deepEqual = require('deep-equal');
 
 // Load fixture data.
 var xml = {
@@ -109,14 +110,6 @@ var rasterxml = {
     });
 })();
 
-function show_json(filepath,vtile1,vtile2) {
-    var e = filepath+'.expected.json';
-    var a = filepath+'.actual.json';
-    fs.writeFileSync(e,JSON.stringify(vtile1,null,2));
-    fs.writeFileSync(a,JSON.stringify(vtile2,null,2));
-    throw new Error('files json representations differs: \n'+e + '\n' + a + '\n');
-}
-
 function compare_vtiles(assert,filepath,vtile1,vtile2) {
     assert.equal(vtile1.width(),vtile2.width());
     assert.equal(vtile1.height(),vtile2.height());
@@ -134,10 +127,12 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
     assert.equal(l1.extent,l2.extent);
     assert.equal(l1.features.length,l2.features.length);
     assert.deepEqual(l1.features[0],l2.features[0]);
-    try {
-      assert.deepEqual(v1,v2);
-    } catch (err) {
-      show_json(filepath,v1,v2);
+    if (!deepEqual(v1,v2)) {
+        var e = filepath+'.expected.json';
+        var a = filepath+'.actual.json';
+        fs.writeFileSync(e,JSON.stringify(JSON.parse(vtile1.toGeoJSON('__all__')),null,2));
+        fs.writeFileSync(a,JSON.stringify(JSON.parse(vtile2.toGeoJSON('__all__')),null,2));
+        assert.ok(false,'files json representations differs: \n'+e + '\n' + a + '\n');
     }
 }
 
@@ -293,7 +288,7 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
             assert.equal(28, docs[0].UN);
             assert.equal(1, docs[0]._id);
             
-            var coordinates = [[[[-61.686668,17.0244410000002],[-61.887222,17.105274],[-61.7944489999999,17.1633300000001],[-61.686668,17.0244410000002]]],[[[-61.7291719999999,17.608608],[-61.853058,17.5830540000001],[-61.873062,17.7038880000001],[-61.7291719999999,17.608608]]]];
+            var coordinates = [[[[-61.686668,17.0244410000002],[-61.7944489999999,17.1633300000001],[-61.887222,17.105274],[-61.686668,17.0244410000002]]],[[[-61.7291719999999,17.608608],[-61.873062,17.7038880000001],[-61.853058,17.5830540000001],[-61.7291719999999,17.608608]]]];
             for(var i = 0; i < docs[0]._geometry.coordinates.length; i++) {
                 var poly = docs[0]._geometry.coordinates[i];
                 for(var k = 0; k < poly.length; k++) {
@@ -302,6 +297,8 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
                         var pair = ring[j];
                         var lonDiff = Math.abs(pair[0] - coordinates[i][k][j][0]);
                         var latDiff = Math.abs(pair[1] - coordinates[i][k][j][1]);
+                        console.log(lonDiff, pair[0], coordinates[i][k][j][0]);
+                        console.log(latDiff, pair[1], coordinates[i][k][j][1]);
                         assert.equal(true, lonDiff < 0.0000000000001);
                         assert.equal(true, latDiff < 0.0000000000001);
                     }
