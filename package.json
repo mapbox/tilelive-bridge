@@ -18,10 +18,13 @@
     "mapnik-pool": "0.1.x"
   },
   "devDependencies": {
+    "istanbul": "~0.3.17",
+    "coveralls": "~2.11.2",
     "tape": "3.0.x"
   },
   "scripts": {
-    "test": "tape test/*.js"
+    "test": "tape test/*.js",
+    "coverage": "istanbul cover tape test/*.js && coveralls < ./coverage/lcov.info"
   },
   "engines": {
     "node": "0.10.x"
