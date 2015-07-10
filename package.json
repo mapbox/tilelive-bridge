@@ -19,10 +19,13 @@
   },
   "devDependencies": {
     "tape": "3.0.x",
-    "deep-equal": "~1.0.0"
+    "deep-equal": "~1.0.0",
+    "istanbul": "~0.3.17",
+    "coveralls": "~2.11.2"
   },
   "scripts": {
-    "test": "tape test/*.js"
+    "test": "tape test/*.js",
+    "coverage": "istanbul cover tape test/*.js && coveralls < ./coverage/lcov.info"
   },
   "engines": {
     "node": "0.10.x"
