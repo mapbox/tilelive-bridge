@@ -72,8 +72,13 @@ Bridge.prototype.update = function(opts, callback) {
     // Unset type. Will be re-set on first getTile.
     this._type = undefined;
     this._xml = opts.xml;
+
+    var bufferSize = 256;
+    if (opts.bufferSize !== undefined) {
+        bufferSize = +opts.bufferSize;
+    }
     this._map = mapnikPool.fromString(this._xml,
-        { size: 256, bufferSize: 256 },
+        { size: 256, bufferSize: bufferSize },
         { strict: false, base: this._base + '/' });
     // If no nextTick the stale pool can be used to acquire new maps.
     return immediate(function() {
