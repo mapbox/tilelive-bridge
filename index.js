@@ -20,6 +20,13 @@ function Bridge(uri, callback) {
     if (typeof uri === 'string' || (uri.protocol && !uri.xml)) {
         uri = typeof uri === 'string' ? url.parse(uri) : uri;
         uri.query = typeof uri.query === 'string' ? qs.parse(uri.query) : (uri.query || {});
+
+        if (uri.hostname === '.' || uri.hostname == '..') {
+            uri.pathname = uri.hostname + uri.pathname;
+            delete uri.hostname;
+            delete uri.host;
+        }
+
         var filepath = path.resolve(uri.pathname);
         fs.readFile(filepath, 'utf8', function(err, xml) {
             if (err) return callback(err);
