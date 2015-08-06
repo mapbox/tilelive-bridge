@@ -19,12 +19,12 @@ function Bridge(uri, callback) {
 
     if (typeof uri === 'string' || (uri.protocol && !uri.xml)) {
         uri = typeof uri === 'string' ? url.parse(uri) : uri;
-        uri.query = typeof uri.query === 'string' ? qs.parse(uri.query) : (uri.query || {});
+        uri.query = typeof uri.query === 'string' ? parseQueryString(uri.query) : (uri.query || {});
         var filepath = path.resolve(uri.pathname);
         fs.readFile(filepath, 'utf8', function(err, xml) {
             if (err) return callback(err);
             var opts = Object.keys(uri.query).reduce(function(memo, key) {
-                memo[key] = !!parseInt(uri.query[key], 10);
+                memo[key] = uri.query[key];
                 return memo;
             }, {xml:xml, base:path.dirname(filepath)});
             init(opts);
@@ -35,6 +35,17 @@ function Bridge(uri, callback) {
         return source;
     }
 
+    function parseQueryString(queryString) {
+        var query = qs.parse(queryString);
+        if (typeof query.blank === 'string') {
+            query.blank = !!parseInt(query.blank, 10);
+        }
+        if (typeof query.bufferSize === 'string') {
+            query.bufferSize = parseInt(query.bufferSize, 10);
+        }
+        return query;
+    }
+
     function init(uri) {
         if (!uri.xml) return callback && callback(new Error('No xml'));
 
@@ -42,7 +53,7 @@ function Bridge(uri, callback) {
         source._base = path.resolve(uri.base || __dirname);
 
         // 'blank' option forces all solid tiles to be interpreted as blank.
-        source._blank = typeof uri.blank === 'boolean' ? uri.blank : false;
+        source._blank = uri.blank !== undefined ? uri.blank : false;
 
         if (callback) source.once('open', callback);
 
@@ -73,10 +84,7 @@ Bridge.prototype.update = function(opts, callback) {
     this._type = undefined;
     this._xml = opts.xml;
 
-    var bufferSize = 256;
-    if (opts.bufferSize !== undefined) {
-        bufferSize = +opts.bufferSize;
-    }
+    var bufferSize = opts.bufferSize !== undefined ? opts.bufferSize : 256;
     this._map = mapnikPool.fromString(this._xml,
         { size: 256, bufferSize: bufferSize },
         { strict: false, base: this._base + '/' });
