@@ -306,13 +306,19 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
             }
                 
             assert.equal('Antigua and Barbuda', docs[0]._text);
-            assert.deepEqual([
+            var expBBox = [
                     -61.88722200000002,
                     17.02444100000014,
                     -61.68666800000004,
                     17.703888000000063
-                ], docs[0]._bbox);
-            assert.deepEqual([ -61.78694500000003, 17.3641645000001 ], docs[0]._center);
+                ];
+            assert.equal(true, Math.abs(expBBox[0] - docs[0]._bbox[0]) < 0.0000000000001);
+            assert.equal(true, Math.abs(expBBox[1] - docs[0]._bbox[1]) < 0.0000000000001);
+            assert.equal(true, Math.abs(expBBox[2] - docs[0]._bbox[2]) < 0.0000000000001);
+            assert.equal(true, Math.abs(expBBox[3] - docs[0]._bbox[3]) < 0.0000000000001);
+            var expCenter = [ -61.78694500000003, 17.3641645000001 ];
+            assert.equal(true, Math.abs(expCenter[0] - docs[0]._center[0]) < 0.0000000000001);
+            assert.equal(true, Math.abs(expCenter[1] - docs[0]._center[1]) < 0.0000000000001);
             source.getIndexableDocs(pointer, function(err, docs, pointer) {
                 assert.ifError(err);
                 assert.deepEqual({featureset: {}, limit:10}, pointer);
