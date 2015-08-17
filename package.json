@@ -1,6 +1,6 @@
 {
   "name": "tilelive-bridge",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "main": "./index.js",
   "description": "Datasource => vector tiles bridge backend for tilelive",
   "repository": {
