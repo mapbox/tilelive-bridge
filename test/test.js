@@ -148,7 +148,7 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
         c: [{key:'10.0.0',empty:true}, {key:'10.765.295', solid:'world'}]
     };
     Object.keys(tests).forEach(function(source) {
-        tape('setup', function(assert) {
+        tape('setup vector', function(assert) {
             sources[source].open(function(err) {
                 assert.ifError(err);
                 assert.end();
@@ -210,7 +210,7 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
         b: ['0.0.0', '1.0.0']
     };
     Object.keys(tests).forEach(function(source) {
-        tape('setup', function(assert) {
+        tape('setup raster', function(assert) {
             sources[source].open(function(err) {
                 assert.ifError(err);
                 assert.end();
@@ -252,7 +252,7 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
 
 (function() {
     var source;
-    tape('setup', function(assert) {
+    tape('setup carmen api', function(assert) {
         new Bridge({ xml:xml.a, base:path.join(__dirname,'/'), blank:true }, function(err, s) {
             if (err) return done(err);
             source = s;

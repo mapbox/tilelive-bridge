@@ -6,6 +6,7 @@ var fs = require('fs');
 var qs = require('querystring');
 var sm = new (require('sphericalmercator'))();
 var immediate = global.setImmediate || process.nextTick;
+var Locking = require('locking');
 
 // Register datasource plugins
 mapnik.register_default_input_plugins();
@@ -67,9 +68,9 @@ Bridge.prototype.open = function(callback) {
 
 // Allows in-place update of XML/backends.
 Bridge.prototype.update = function(opts, callback) {
-    // Unset maxzoom. Will be re-set on first getTile.
+    // Unset props to be determined by updated source.
+    this._metatiler = undefined;
     this._maxzoom = undefined;
-    // Unset type. Will be re-set on first getTile.
     this._type = undefined;
     this._xml = opts.xml;
 
@@ -138,14 +139,6 @@ Bridge.prototype.getTile = function(z, x, y, callback) {
     }
 };
 
-Bridge.prototype.getRaster = function(z, x, y, callback) {
-    var source = this;
-    this._map.acquire(function(err, map) {
-        if (err) return callback(err);
-        Bridge._getRaster(source, map, z, x, y, callback);
-    });
-};
-
 Bridge.prototype.getVector = function(z, x, y, callback) {
     var source = this;
     this._map.acquire(function(err, map) {
@@ -154,13 +147,30 @@ Bridge.prototype.getVector = function(z, x, y, callback) {
     });
 };
 
-Bridge._getRaster = function(source, map, z, x, y, callback) {
-    map.resize(512,512);
-    map.extent = sm.bbox(+x,+y,+z, false, '900913');
-    map.render(new mapnik.Image(512,512), function(err, image) {
-        immediate(function() { source._map.release(map); });
+Bridge.prototype.getRaster = function(z, x, y, callback) {
+    var source = this;
+
+    // Lazily instantiate a locking cache + metatiler
+    if (!source._metatiler) source._metatiler = Locking(function(options, callback) {
+        source._map.acquire(function(err, map) {
+            if (err) return callback(err);
+            map.resize(512 * options.meta,512 * options.meta);
+            map.extent = sm.bbox(options.mx, options.my, options.mz, false, '900913');
+            map.render(new mapnik.Image(512 * options.meta, 512 * options.meta), function(err, image) {
+                immediate(function() { source._map.release(map); });
+                return callback(err, image);
+            });
+        });
+    }, { max: 32 });
+
+    // Retrieve image from metatile and crop to tile view
+    var meta = Math.min(Math.pow(2,z), 8);
+    var mx = Math.floor(x/meta);
+    var my = Math.floor(y/meta);
+    var mz = Math.max(0,z-8);
+    source._metatiler({ meta:meta, mz:mz, mx:mx, my:my }, function(err, image) {
         if (err) return callback(err);
-        var view = image.view(0,0,512,512);
+        var view = image.view((x%meta)*512, (y%meta)*512, 512, 512);
         view.isSolid(function(err, solid, pixel) {
             if (err) return callback(err);
 
