@@ -73,50 +73,14 @@ Bridge.prototype.update = function(opts, callback) {
     this._maxzoom = undefined;
     this._type = undefined;
     this._xml = opts.xml;
-
-    var pool = mapnikPool.fromString(this._xml,
+    this._map = mapnikPool.fromString(this._xml,
         { size: 256, bufferSize: 256 },
         { strict: false, base: this._base + '/' });
 
-    var source = this;
-
     // If no nextTick the stale pool can be used to acquire new maps.
-    immediate(destroyAll);
-
-    function destroyAll(err) {
-        if (err) return callback(err);
-        if (source._map) {
-            source._map.destroyAllNow(setType);
-        } else {
-            setType();
-        }
-    }
-
-    function setType(err) {
-        if (err) return callback(err);
-        pool.acquire(function(err, map) {
-            if (err) return callback(err);
-
-            // set source _maxzoom cache to prevent repeat calls to map.parameters
-            source._maxzoom = map.parameters.maxzoom ? parseInt(map.parameters.maxzoom, 10) : 14;
-
-            // set source _type cache to prevent repeat calls to map layers
-            var layers = map.layers();
-            if (layers.length && layers.some(function(l) { return l.datasource.type === 'raster' })) {
-                source._type = 'raster';
-            } else {
-                source._type = 'vector';
-            }
-
-            // return map to pool
-            immediate(function() { pool.release(map); });
-
-            // once _map is set rest of methods know we're done
-            source._map = pool;
-
-            callback();
-        });
-    }
+    return immediate(function() {
+        this._map.destroyAllNow(callback);
+    }.bind(this));
 };
 
 Bridge.prototype.close = function(callback) {
@@ -131,7 +95,33 @@ Bridge.prototype.close = function(callback) {
 };
 
 Bridge.prototype.getTile = function(z, x, y, callback) {
+    var source = this;
+
     if (!this._map) return callback(new Error('Tilesource not loaded'));
+
+    if (!this._type) return this._map.acquire(function(err, map) {
+        if (err) return callback(err);
+
+        // set source _maxzoom cache to prevent repeat calls to map.parameters
+        if (source._maxzoom === undefined) {
+            source._maxzoom = map.parameters.maxzoom ? parseInt(map.parameters.maxzoom, 10) : 14;
+        }
+
+        // set source _type cache to prevent repeat calls to map layers
+        if (source._type === undefined) {
+            var layers = map.layers();
+            if (layers.length && layers.some(function(l) { return l.datasource.type === 'raster' })) {
+                source._type = 'raster';
+            } else {
+                source._type = 'vector';
+            }
+        }
+
+        immediate(function() { source._map.release(map); });
+
+        return source.getTile(z, x, y, callback);
+    });
+
     if (this._type === 'raster') {
         this.getRaster(z, x, y, callback);
     } else {
