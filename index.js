@@ -72,13 +72,50 @@ Bridge.prototype.update = function(opts, callback) {
     // Unset type. Will be re-set on first getTile.
     this._type = undefined;
     this._xml = opts.xml;
-    this._map = mapnikPool.fromString(this._xml,
+
+    var pool = mapnikPool.fromString(this._xml,
         { size: 256, bufferSize: 256 },
         { strict: false, base: this._base + '/' });
+
+    var source = this;
+
     // If no nextTick the stale pool can be used to acquire new maps.
-    return immediate(function() {
-        this._map.destroyAllNow(callback);
-    }.bind(this));
+    immediate(destroyAll);
+
+    function destroyAll(err) {
+        if (err) return callback(err);
+        if (source._map) {
+            source._map.destroyAllNow(setType);
+        } else {
+            setType();
+        }
+    }
+
+    function setType(err) {
+        if (err) return callback(err);
+        pool.acquire(function(err, map) {
+            if (err) return callback(err);
+
+            // set source _maxzoom cache to prevent repeat calls to map.parameters
+            source._maxzoom = map.parameters.maxzoom ? parseInt(map.parameters.maxzoom, 10) : 14;
+
+            // set source _type cache to prevent repeat calls to map layers
+            var layers = map.layers();
+            if (layers.length && layers.some(function(l) { return l.datasource.type === 'raster' })) {
+                source._type = 'raster';
+            } else {
+                source._type = 'vector';
+            }
+
+            // return map to pool
+            immediate(function() { pool.release(map); });
+
+            // once _map is set rest of methods know we're done
+            source._map = pool;
+
+            callback();
+        });
+    }
 };
 
 Bridge.prototype.close = function(callback) {
@@ -94,35 +131,30 @@ Bridge.prototype.close = function(callback) {
 
 Bridge.prototype.getTile = function(z, x, y, callback) {
     if (!this._map) return callback(new Error('Tilesource not loaded'));
+    if (this._type === 'raster') {
+        this.getRaster(z, x, y, callback);
+    } else {
+        this.getVector(z, x, y, callback);
+    }
+};
 
+Bridge.prototype.getRaster = function(z, x, y, callback) {
     var source = this;
-    source._map.acquire(function(err, map) {
+    this._map.acquire(function(err, map) {
         if (err) return callback(err);
-
-        // set source _maxzoom cache to prevent repeat calls to map.parameters
-        if (source._maxzoom === undefined) {
-            source._maxzoom = map.parameters.maxzoom ? parseInt(map.parameters.maxzoom, 10) : 14;
-        }
-
-        // set source _type cache to prevent repeat calls to map layers
-        if (source._type === undefined) {
-            var layers = map.layers();
-            if (layers.length && layers.some(function(l) { return l.datasource.type === 'raster' })) {
-                source._type = 'raster';
-            } else {
-                source._type = 'vector';
-            }
-        }
-
-        if (source._type === 'raster') {
-            Bridge.getRaster(source, map, z, x, y, callback);
-        } else {
-            Bridge.getVector(source, map, z, x, y, callback);
-        }
+        Bridge._getRaster(source, map, z, x, y, callback);
     });
 };
 
-Bridge.getRaster = function(source, map, z, x, y, callback) {
+Bridge.prototype.getVector = function(z, x, y, callback) {
+    var source = this;
+    this._map.acquire(function(err, map) {
+        if (err) return callback(err);
+        Bridge._getVector(source, map, z, x, y, callback);
+    });
+};
+
+Bridge._getRaster = function(source, map, z, x, y, callback) {
     map.resize(512,512);
     map.extent = sm.bbox(+x,+y,+z, false, '900913');
     map.render(new mapnik.Image(512,512), function(err, image) {
@@ -153,7 +185,7 @@ Bridge.getRaster = function(source, map, z, x, y, callback) {
     });
 };
 
-Bridge.getVector = function(source, map, z, x, y, callback) {
+Bridge._getVector = function(source, map, z, x, y, callback) {
     var opts = {};
 
     var headers = {};
