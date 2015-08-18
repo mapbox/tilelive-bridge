@@ -68,14 +68,15 @@ Bridge.prototype.open = function(callback) {
 
 // Allows in-place update of XML/backends.
 Bridge.prototype.update = function(opts, callback) {
-    // Unset props to be determined by updated source.
-    this._metatiler = undefined;
+    // Unset maxzoom. Will be re-set on first getTile.
     this._maxzoom = undefined;
+    // Unset type. Will be re-set on first getTile.
     this._type = undefined;
     this._xml = opts.xml;
     this._map = mapnikPool.fromString(this._xml,
         { size: 256, bufferSize: 256 },
         { strict: false, base: this._base + '/' });
+    this._metatiler = undefined;
 
     // If no nextTick the stale pool can be used to acquire new maps.
     return immediate(function() {
