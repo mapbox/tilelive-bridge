@@ -206,7 +206,7 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
         b: new Bridge({ xml:rasterxml.b, base:path.join(__dirname,'/'), blank:true })
     };
     var tests = {
-        a: ['0.0.0', '1.0.0'],
+        a: ['0.0.0', '1.0.0', '2.1.1', '3.2.2', '4.3.3', '5.4.4'],
         b: ['0.0.0', '1.0.0']
     };
     Object.keys(tests).forEach(function(source) {
