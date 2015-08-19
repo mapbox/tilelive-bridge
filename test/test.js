@@ -53,13 +53,46 @@ var rasterxml = {
             assert.end();
         });
     });
-    tape('should load query params', function(assert) {
-        new Bridge('bridge://' + path.resolve(path.join(__dirname,'/test-a.xml?blank=1')), function(err, source) {
+    tape('should have proper default params', function(assert) {
+        new Bridge('bridge://' + path.resolve(path.join(__dirname,'/test-a.xml')), function(err, source) {
+            assert.ifError(err);
+            assert.equal(source._blank, false);
+            assert.equal(source._xml, xml.a);
+            assert.equal(source._base, __dirname);
+            source._map.acquire(function(err, map) {
+                assert.ifError(err);
+                assert.equal(map.bufferSize, 256);
+                source._map.release(map);
+                assert.end();
+            });
+        });
+    });
+    tape('should load query params from url', function(assert) {
+        new Bridge('bridge://' + path.resolve(path.join(__dirname,'/test-a.xml?blank=1&bufferSize=10')), function(err, source) {
             assert.ifError(err);
             assert.equal(source._blank, true);
             assert.equal(source._xml, xml.a);
             assert.equal(source._base, __dirname);
-            assert.end();
+            source._map.acquire(function(err, map) {
+                assert.ifError(err);
+                assert.equal(map.bufferSize, 10);
+                source._map.release(map);
+                assert.end();
+            });
+        });
+    });
+    tape('should load query params from url', function(assert) {
+        new Bridge({ xml: xml.a, base: path.join(__dirname, '/'), blank: true, bufferSize: 10 }, function(err, source) {
+            assert.ifError(err);
+            assert.equal(source._blank, true);
+            assert.equal(source._xml, xml.a);
+            assert.equal(source._base, __dirname);
+            source._map.acquire(function(err, map) {
+                assert.ifError(err);
+                assert.equal(map.bufferSize, 10);
+                source._map.release(map);
+                assert.end();
+            });
         });
     });
     tape('#open should call all listeners', function(assert) {
