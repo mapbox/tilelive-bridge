@@ -29,7 +29,7 @@ tape('raster bench', function(assert) {
         assert.ifError(err);
         time = +(new Date()) - time;
         var rate = total/(time/1000);
-        assert.equal(rate > (require('os').cpus().length * 5), true, 'render ' + total + ' tiles @ ' + rate.toFixed(1) + ' tiles/sec');
+        assert.equal(rate > 20, true, 'render ' + total + ' tiles @ ' + rate.toFixed(1) + ' tiles/sec');
         assert.end();
     });
 });
