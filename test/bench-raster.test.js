@@ -6,6 +6,10 @@ var queue = require('queue-async');
 
 var source = new Bridge({ xml: fs.readFileSync(path.resolve(path.join(__dirname,'/raster-a.xml')), 'utf8'), base:path.join(__dirname,'/'), blank:true });
 
+tape('warmup', function(assert) {
+    source.getTile(0, 0, 0, assert.end);
+});
+
 tape('raster bench', function(assert) {
     var time = +(new Date());
     var total = 0;
