@@ -123,6 +123,7 @@ Bridge.prototype.getTile = function(z, x, y, callback) {
 };
 
 Bridge.getRaster = function(source, map, z, x, y, callback) {
+    map.bufferSize = 0;
     map.resize(512,512);
     map.extent = sm.bbox(+x,+y,+z, false, '900913');
     map.render(new mapnik.Image(512,512), function(err, image) {

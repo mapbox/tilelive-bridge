@@ -18,6 +18,7 @@
     "mapnik-pool": "0.1.x"
   },
   "devDependencies": {
+    "queue-async": "1.0.7",
     "tape": "3.0.x",
     "deep-equal": "~1.0.0",
     "istanbul": "~0.3.17",
