@@ -1,5 +1,13 @@
 # Changlog
 
+## 1.4.0
+
+ - Update to mapnik 3.4.x.
+
+## 1.3.0
+
+ - Update to mapnik 3.3.x with improved VT simplification.
+
 ## 1.2.6
 
  - Drain the mapnik-pool before destroying it during .close()
