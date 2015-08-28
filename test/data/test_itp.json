@@ -4,13 +4,13 @@
     {
       "type": "Feature",
       "properties": {
-        "name": "Test Street",
-        "_lfromhn": "1,101",
-        "_ltohn": "99,199",
-        "_rfromhn": "0,100",
-        "_rtohn": "98,198",
-        "_parityr": "E,E",
-        "_parityl": "O,O"
+        "carmen:text": "Test Street",
+        "carmen:lfromhn": "1,101",
+        "carmen:ltohn": "99,199",
+        "carmen:rfromhn": "0,100",
+        "carmen:rtohn": "98,198",
+        "carmen:parityr": "E,E",
+        "carmen:parityl": "O,O"
       },
       "geometry": {
         "type": "MultiLineString",
