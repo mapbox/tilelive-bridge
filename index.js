@@ -196,7 +196,7 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
         if (err) return callback(err);
         image.isSolid(function(err, solid, key) {
             if (err) return callback(err);
-
+            var painted = image.painted();
             var buffer = image.getData();
             // we no longer need the vtile data, so purge it now
             // to keep memory low and trigger less gc churn
@@ -210,7 +210,7 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
                     if (solid === false) return callback(err, pbfz, headers);
 
                     // Empty tiles are equivalent to no tile.
-                    if (source._blank || !key) return callback(new Error('Tile does not exist'));
+                    if (source._blank || (!key && !painted)) return callback(new Error('Tile does not exist'));
 
                     pbfz.solid = key;
 
