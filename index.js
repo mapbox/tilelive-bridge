@@ -338,7 +338,7 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                     newdoc.bbox = doc.bbox || (srs === '+init=epsg:4326' ? f.extent() : sm.convert(f.extent(), 'WGS84'));
                 }
 
-                var itpFields = ['carmen:lfromhn', 'carmen:ltohn', 'carmen:rfromhn', 'carmen:rtohn', 'carmen:parityr', 'carmen:parityl'];
+                var itpFields = ['carmen:addressnumber', 'carmen:lfromhn', 'carmen:ltohn', 'carmen:rfromhn', 'carmen:rtohn', 'carmen:parityr', 'carmen:parityl'];
                 for(var field_i=0;field_i<itpFields.length;field_i++)
                     if (newdoc.properties[itpFields[field_i]])
                         newdoc.properties[itpFields[field_i]] = newdoc.properties[itpFields[field_i]].split(',');
