@@ -1,5 +1,14 @@
 # Changlog
 
+## 1.5.1
+
+ - Removed bad checked if image is painted to determine if it is empty or not as this
+   results in empty tiles being created.
+
+## 1.5.0
+
+ - Update to mapnik 3.4.6
+
 ## 1.4.0
 
  - Update to mapnik 3.4.x.
