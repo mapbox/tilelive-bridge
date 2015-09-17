@@ -1,5 +1,9 @@
 # Changlog
 
+## 1.6.0
+
+ - Return a header that will notify tilelive if vector data is painted.
+
 ## 1.5.1
 
  - Removed bad checked if image is painted to determine if it is empty or not as this

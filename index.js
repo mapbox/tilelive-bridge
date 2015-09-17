@@ -199,11 +199,12 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
                 if (err) return callback(err);
                 headers['Content-Encoding'] = 'gzip';
 
+                headers['x-tilelive-contains-data'] = image.painted();
                 // Solid handling.
                 if (solid === false) return callback(err, pbfz, headers);
 
                 // Empty tiles are equivalent to no tile.
-                if (source._blank || !key) return callback(new Error('Tile does not exist'));
+                if (source._blank || !key) return callback(new Error('Tile does not exist'), null, headers);
 
                 pbfz.solid = key;
 
