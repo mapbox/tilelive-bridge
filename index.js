@@ -223,7 +223,7 @@ Bridge.prototype.getInfo = function(callback) {
         var params = map.parameters;
         var info = Object.keys(params).reduce(function(memo, key) {
             switch (key) {
-            // The special "json" key/value pair allows JSON to be serialized
+            // The special 'json' key/value pair allows JSON to be serialized
             // and merged into the metadata of a mapnik XML based source. This
             // enables nested properties and non-string datatypes to be
             // captured by mapnik XML.
@@ -286,7 +286,7 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
             immediate(function() { source._map.release(map); });
 
             var name = (map.parameters.geocoder_layer||'').split('.').shift() || '';
-            var field = (map.parameters.geocoder_layer||'').split('.').pop() || '_text';
+            var field = (map.parameters.geocoder_layer||'').split('.').pop() || 'carmen:text';
             var zoom = info.maxzoom + parseInt(map.parameters.geocoder_resolution||0, 10);
             var layer = name ?
                 map.layers().filter(function(l) { return l.name === name })[0] :
@@ -315,54 +315,54 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                     return callback(null, docs, pointer);
                 }
 
+                var newdoc = {
+                    type: 'Feature',
+                    properties: f.attributes()
+                };
                 var doc = f.attributes();
+
                 if (!doc[field]) return ++i && immediate(feature);
-                doc._id = f.id();
-                doc._text = doc[field];
-                if (typeof doc._bbox === 'string') {
-                    doc._bbox = doc._bbox.split(',');
-                    doc._bbox[0] = parseFloat(doc._bbox[0]);
-                    doc._bbox[1] = parseFloat(doc._bbox[1]);
-                    doc._bbox[2] = parseFloat(doc._bbox[2]);
-                    doc._bbox[3] = parseFloat(doc._bbox[3]);
+
+                newdoc.id = f.id();
+                newdoc.properties['carmen:text'] = doc[field];
+                if (typeof doc.bbox === 'string') {
+                    newdoc.bbox = doc.bbox.split(',').map(parseFloat);
                 } else {
-                    doc._bbox = doc._bbox || (srs === '+init=epsg:4326' ? f.extent() : sm.convert(f.extent(), 'WGS84'));
+                    newdoc.bbox = doc.bbox || (srs === '+init=epsg:4326' ? f.extent() : sm.convert(f.extent(), 'WGS84'));
                 }
 
-                if (typeof doc._lfromhn === 'string') doc._lfromhn = doc._lfromhn.split(',');
-                if (typeof doc._ltohn === 'string') doc._ltohn = doc._ltohn.split(',');
-                if (typeof doc._rfromhn === 'string') doc._rfromhn = doc._rfromhn.split(',');
-                if (typeof doc._rtohn === 'string') doc._rtohn = doc._rtohn.split(',');
-                if (typeof doc._parityr === 'string') doc._parityr = doc._parityr.split(',');
-                if (typeof doc._parityl === 'string') doc._parityl = doc._parityl.split(',');
+                var itpFields = ['carmen:addressnumber', 'carmen:lfromhn', 'carmen:ltohn', 'carmen:rfromhn', 'carmen:rtohn', 'carmen:parityr', 'carmen:parityl'];
+                for(var field_i=0;field_i<itpFields.length;field_i++)
+                    if (newdoc.properties[itpFields[field_i]])
+                        newdoc.properties[itpFields[field_i]] = newdoc.properties[itpFields[field_i]].split(',');
 
-                if (typeof doc._center === 'string') {
-                    doc._center = doc._center.split(',');
-                    doc._center[0] = parseFloat(doc._center[0]);
-                    doc._center[1] = parseFloat(doc._center[1]);
-                } else {
-                    doc._center = [
-                        doc._bbox[0] + (doc._bbox[2]-doc._bbox[0])*0.5,
-                        doc._bbox[1] + (doc._bbox[3]-doc._bbox[1])*0.5
+                if (typeof doc['carmen:center'] === 'string') {
+                    newdoc.properties['carmen:center'] = doc['carmen:center'].split(',').map(parseFloat);
+                }
+                else {
+                    newdoc.properties['carmen:center'] = [
+                        newdoc.bbox[0] + (newdoc.bbox[2] - newdoc.bbox[0]) * 0.5,
+                        newdoc.bbox[1] + (newdoc.bbox[3] - newdoc.bbox[1]) * 0.5
                     ];
                 }
-                if (doc._bbox[0] === doc._bbox[2]) delete doc._bbox;
+                if (newdoc.bbox[0] === newdoc.bbox[2]) delete newdoc.bbox;
 
                 var geom = f.geometry();
-                if (srs == "+init=epsg:4326") {
+
+                if (srs == '+init=epsg:4326') {
                     geom.toJSON(function(err,json_string) {
-                        doc._geometry = JSON.parse(json_string);
-                        docs.push(doc);
+                        newdoc.geometry = JSON.parse(json_string);
+                        docs.push(newdoc);
                         i++;
                         immediate(feature);
                     });
                 } else {
                     var from = new mapnik.Projection(srs);
-                    var to = new mapnik.Projection("+init=epsg:4326");
+                    var to = new mapnik.Projection('+init=epsg:4326');
                     var tr = new mapnik.ProjTransform(from,to);
                     geom.toJSON({transform:tr},function(err,json_string) {
-                        doc._geometry = JSON.parse(json_string);
-                        docs.push(doc);
+                        newdoc.geometry = JSON.parse(json_string);
+                        docs.push(newdoc);
                         i++;
                         immediate(feature);
                     });

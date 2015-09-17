@@ -7,7 +7,7 @@
   <Parameter name="center">0,0,2</Parameter>
   <Parameter name="minzoom">0</Parameter>
   <Parameter name="maxzoom">8</Parameter>
-  <Parameter name="geocoder_layer">data.name</Parameter>
+  <Parameter name="geocoder_layer">data.carmen:text</Parameter>
   <Parameter name="geocoder_resolution">0</Parameter>
 </Parameters>
 

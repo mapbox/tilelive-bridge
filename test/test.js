@@ -263,7 +263,7 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
         source.getIndexableDocs({ limit:10 }, function(err, docs, pointer) {
             assert.ifError(err);
             assert.deepEqual({featureset: {}, limit:10}, pointer);
-            assert.deepEqual([
+            assert.deepEqual(docs.slice(0,10).map(function(d) { return d.properties['carmen:text'] }), [
                 'Antigua and Barbuda',
                 'Algeria',
                 'Azerbaijan',
@@ -274,51 +274,50 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
                 'Argentina',
                 'Australia',
                 'Bahrain'
-            ], docs.map(function(d) { return d.NAME }));
-            assert.equal(44, docs[0].AREA);
-            assert.equal('AC', docs[0].FIPS);
-            assert.equal('AG', docs[0].ISO2);
-            assert.equal('ATG', docs[0].ISO3);
-            assert.equal(17.078, docs[0].LAT);
-            assert.equal(-61.783, docs[0].LON);
-            assert.equal('Antigua and Barbuda', docs[0].NAME);
-            assert.equal(83039, docs[0].POP2005);
-            assert.equal(19, docs[0].REGION);
-            assert.equal(29, docs[0].SUBREGION);
-            assert.equal(28, docs[0].UN);
-            assert.equal(1, docs[0]._id);
-            
+            ]);
+
+            assert.equal(44, docs[0].properties.AREA);
+            assert.equal('AC', docs[0].properties.FIPS);
+            assert.equal('AG', docs[0].properties.ISO2);
+            assert.equal('ATG', docs[0].properties.ISO3);
+            assert.equal(17.078, docs[0].properties.LAT);
+            assert.equal(-61.783, docs[0].properties.LON);
+            assert.equal('Antigua and Barbuda', docs[0].properties.NAME);
+            assert.equal(83039, docs[0].properties.POP2005);
+            assert.equal(19, docs[0].properties.REGION);
+            assert.equal(29, docs[0].properties.SUBREGION);
+            assert.equal(28, docs[0].properties.UN);
+            assert.equal(1, docs[0].id);
+
             var coordinates = [[[[-61.686668,17.0244410000002],[-61.7944489999999,17.1633300000001],[-61.887222,17.105274],[-61.686668,17.0244410000002]]],[[[-61.7291719999999,17.608608],[-61.873062,17.7038880000001],[-61.853058,17.5830540000001],[-61.7291719999999,17.608608]]]];
-            for(var i = 0; i < docs[0]._geometry.coordinates.length; i++) {
-                var poly = docs[0]._geometry.coordinates[i];
+            for(var i = 0; i < docs[0].geometry.coordinates.length; i++) {
+                var poly = docs[0].geometry.coordinates[i];
                 for(var k = 0; k < poly.length; k++) {
                     var ring = poly[k];
                     for(var j = 0; j < ring.length; j++) {
                         var pair = ring[j];
                         var lonDiff = Math.abs(pair[0] - coordinates[i][k][j][0]);
                         var latDiff = Math.abs(pair[1] - coordinates[i][k][j][1]);
-                        console.log(lonDiff, pair[0], coordinates[i][k][j][0]);
-                        console.log(latDiff, pair[1], coordinates[i][k][j][1]);
                         assert.equal(true, lonDiff < 0.0000000000001);
                         assert.equal(true, latDiff < 0.0000000000001);
                     }
                 }
             }
-                
-            assert.equal('Antigua and Barbuda', docs[0]._text);
+
+            assert.equal('Antigua and Barbuda', docs[0].properties['carmen:text']);
             var expBBox = [
                     -61.88722200000002,
                     17.02444100000014,
                     -61.68666800000004,
                     17.703888000000063
                 ];
-            assert.equal(true, Math.abs(expBBox[0] - docs[0]._bbox[0]) < 0.0000000000001);
-            assert.equal(true, Math.abs(expBBox[1] - docs[0]._bbox[1]) < 0.0000000000001);
-            assert.equal(true, Math.abs(expBBox[2] - docs[0]._bbox[2]) < 0.0000000000001);
-            assert.equal(true, Math.abs(expBBox[3] - docs[0]._bbox[3]) < 0.0000000000001);
+            assert.equal(true, Math.abs(expBBox[0] - docs[0].bbox[0]) < 0.0000000000001);
+            assert.equal(true, Math.abs(expBBox[1] - docs[0].bbox[1]) < 0.0000000000001);
+            assert.equal(true, Math.abs(expBBox[2] - docs[0].bbox[2]) < 0.0000000000001);
+            assert.equal(true, Math.abs(expBBox[3] - docs[0].bbox[3]) < 0.0000000000001);
             var expCenter = [ -61.78694500000003, 17.3641645000001 ];
-            assert.equal(true, Math.abs(expCenter[0] - docs[0]._center[0]) < 0.0000000000001);
-            assert.equal(true, Math.abs(expCenter[1] - docs[0]._center[1]) < 0.0000000000001);
+            assert.equal(true, Math.abs(expCenter[0] - docs[0].properties['carmen:center'][0]) < 0.0000000000001);
+            assert.equal(true, Math.abs(expCenter[1] - docs[0].properties['carmen:center'][1]) < 0.0000000000001);
             source.getIndexableDocs(pointer, function(err, docs, pointer) {
                 assert.ifError(err);
                 assert.deepEqual({featureset: {}, limit:10}, pointer);
@@ -333,7 +332,7 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
                     'Burma',
                     'Benin',
                     'Solomon Islands'
-                ], docs.map(function(d) { return d.NAME }));
+                ], docs.map(function(d) { return d.properties.NAME }));
 
                 // Gross hack to end the endless setTimeout loop upstream in
                 // mapnik-pool => generic-pool. Fix upstream!
@@ -354,16 +353,16 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
         source.getIndexableDocs({ limit:10 }, function(err, docs, pointer) {
             assert.ifError(err);
             assert.deepEqual({featureset: {}, limit:10}, pointer);
-            assert.equal(docs[0]._text, 'Test Street');
-            assert.equal(docs[0]._id, 1);
-            assert.deepEqual(docs[0]._center, [ 10, 10 ]);
-            assert.deepEqual(docs[0]._bbox, [ 0, 0, 20, 20 ]);
-            assert.deepEqual(docs[0]._lfromhn, ['1','101']);
-            assert.deepEqual(docs[0]._ltohn, ['99','199']);
-            assert.deepEqual(docs[0]._rfromhn, ['0','100']);
-            assert.deepEqual(docs[0]._rtohn, ['98','198']);
-            assert.deepEqual(docs[0]._parityr, ['E', 'E']);
-            assert.deepEqual(docs[0]._parityl, ['O', 'O']);
+            assert.equal(docs[0].properties['carmen:text'], 'Test Street');
+            assert.equal(docs[0].id, 1);
+            assert.deepEqual(docs[0].bbox, [ 0, 0, 20, 20 ]);
+            assert.deepEqual(docs[0].properties['carmen:center'], [ 10, 10 ]);
+            assert.deepEqual(docs[0].properties['carmen:lfromhn'], ['1','101']);
+            assert.deepEqual(docs[0].properties['carmen:ltohn'], ['99','199']);
+            assert.deepEqual(docs[0].properties['carmen:rfromhn'], ['0','100']);
+            assert.deepEqual(docs[0].properties['carmen:rtohn'], ['98','198']);
+            assert.deepEqual(docs[0].properties['carmen:parityr'], ['E', 'E']);
+            assert.deepEqual(docs[0].properties['carmen:parityl'], ['O', 'O']);
             assert.end();
         });
     });
