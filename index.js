@@ -178,12 +178,12 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
 
         The goal is to simplify enough to reduce the encoded geometry size without noticeable visual impact.
 
-        A value of 8 is used below maxzoom. This was chosen arbitrarily.
+        A value of 4 is used below maxzoom and was chosen for detail when using mapbox-gl-js (with legacy rendering, 8 does ok as well)
 
         A value of 1 is used at maxzoom and above. The idea is that 1 will throw out nearly coincident points while
         having negligible visual impact even if the tile is overzoomed (but this warrants more testing).
     */
-    opts.simplify_distance = z < source._maxzoom ? 8 : 1;
+    opts.simplify_distance = z < source._maxzoom ? 4 : 1;
     // This is the default path_multiplier - it is not recommended to change this
     opts.path_multiplier = 16;
 
