@@ -1,5 +1,13 @@
 # Changlog
 
+## 2.1.0
+
+ - Reduce default simplify_distance to 4 targeting GL rendering.
+
+## 2.0.0
+
+ - Update to new carmen geocoder indexing API.
+
 ## 1.6.0
 
  - Return a header that will notify tilelive if vector data is painted.
