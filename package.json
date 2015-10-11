@@ -13,7 +13,7 @@
     }
   ],
   "dependencies": {
-    "mapnik": "https://github.com/mapnik/node-mapnik/tarball/3.4.9-attribute",
+    "mapnik": "~3.4.8",
     "sphericalmercator": "1.0.x",
     "mapnik-pool": "0.1.x"
   },
