@@ -1,5 +1,9 @@
 # Changlog
 
+## 2.2.0
+
+ - Render VTs with strictly_simple flag.
+
 ## 2.1.0
 
  - Reduce default simplify_distance to 4 targeting GL rendering.
