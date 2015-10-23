@@ -190,6 +190,10 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
     // also pass buffer_size in options to be forward compatible with recent node-mapnik
     // https://github.com/mapnik/node-mapnik/issues/175
     opts.buffer_size = map.bufferSize;
+
+    // enable strictly_simple
+    opts.strictly_simple = true;
+
     map.render(new mapnik.VectorTile(+z,+x,+y), opts, function(err, image) {
         immediate(function() { source._map.release(map); });
         if (err) return callback(err);
