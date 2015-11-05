@@ -162,38 +162,45 @@ Bridge.getRaster = function(source, map, z, x, y, callback) {
     map.extent = sm.bbox(+x,+y,+z, false, '900913');
     source._im.acquire(function(err, im) {
         if (err) return callback(err);
-        map.render(im, function(err, image) {
-            immediate(function() { source._map.release(map); });
+        im.clear(function(err) {
             if (err) {
+                immediate(function() { source._map.release(map); });
                 immediate(function() { source._im.release(im); });
                 return callback(err);
             }
-            image.isSolid(function(err, solid, pixel) {
+            map.render(im, function(err, image) {
+                immediate(function() { source._map.release(map); });
                 if (err) {
                     immediate(function() { source._im.release(im); });
                     return callback(err);
                 }
+                image.isSolid(function(err, solid, pixel) {
+                    if (err) {
+                        immediate(function() { source._im.release(im); });
+                        return callback(err);
+                    }
 
-                // If source is in blank mode any solid tile is empty.
-                if (solid && source._blank) {
-                    immediate(function() { source._im.release(im); });
-                    return callback(new Error('Tile does not exist'));
-                }
+                    // If source is in blank mode any solid tile is empty.
+                    if (solid && source._blank) {
+                        immediate(function() { source._im.release(im); });
+                        return callback(new Error('Tile does not exist'));
+                    }
 
-                var pixel_key = '';
-                if (solid) {
-                    var a = (pixel>>>24) & 0xff;
-                    var r = pixel & 0xff;
-                    var g = (pixel>>>8) & 0xff;
-                    var b = (pixel>>>16) & 0xff;
-                    pixel_key = r +','+ g + ',' + b + ',' + a;
-                }
+                    var pixel_key = '';
+                    if (solid) {
+                        var a = (pixel>>>24) & 0xff;
+                        var r = pixel & 0xff;
+                        var g = (pixel>>>8) & 0xff;
+                        var b = (pixel>>>16) & 0xff;
+                        pixel_key = r +','+ g + ',' + b + ',' + a;
+                    }
 
-                image.encode('webp', {}, function(err, buffer) {
-                    immediate(function() { source._im.release(im); });
-                    if (err) return callback(err);
-                    buffer.solid = pixel_key;
-                    return callback(err, buffer, {'Content-Type':'image/webp'});
+                    image.encode('webp', {}, function(err, buffer) {
+                        immediate(function() { source._im.release(im); });
+                        if (err) return callback(err);
+                        buffer.solid = pixel_key;
+                        return callback(err, buffer, {'Content-Type':'image/webp'});
+                    });
                 });
             });
         });
