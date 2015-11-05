@@ -13,6 +13,8 @@ var mapnikPool = require('mapnik-pool')(mapnik);
 
 module.exports = Bridge;
 
+var raster_tile_size = 512;
+
 function Bridge(uri, callback) {
     var source = this;
 
@@ -70,6 +72,8 @@ Bridge.prototype.update = function(opts, callback) {
     this._maxzoom = undefined;
     // Unset type. Will be re-set on first getTile.
     this._type = undefined;
+    // Unset image. Will be re-set on first getTile.
+    this._im = undefined;
     this._xml = opts.xml;
     this._map = mapnikPool.fromString(this._xml,
         { size: 256, bufferSize: 256 },
@@ -108,6 +112,7 @@ Bridge.prototype.getTile = function(z, x, y, callback) {
             var layers = map.layers();
             if (layers.length && layers.some(function(l) { return l.datasource.type === 'raster' })) {
                 source._type = 'raster';
+                source._im = new mapnik.Image(raster_tile_size,raster_tile_size)
             } else {
                 source._type = 'vector';
             }
@@ -123,31 +128,33 @@ Bridge.prototype.getTile = function(z, x, y, callback) {
 
 Bridge.getRaster = function(source, map, z, x, y, callback) {
     map.bufferSize = 0;
-    map.resize(512,512);
+    map.resize(raster_tile_size,raster_tile_size);
     map.extent = sm.bbox(+x,+y,+z, false, '900913');
-    map.render(new mapnik.Image(512,512), function(err, image) {
-        immediate(function() { source._map.release(map); });
+    source._im.clear(function(err) {
         if (err) return callback(err);
-        var view = image.view(0,0,512,512);
-        view.isSolid(function(err, solid, pixel) {
+        map.render(source._im, function(err, image) {
+            immediate(function() { source._map.release(map); });
             if (err) return callback(err);
-
-            // If source is in blank mode any solid tile is empty.
-            if (solid && source._blank) return callback(new Error('Tile does not exist'));
-
-            var pixel_key = '';
-            if (solid) {
-                var a = (pixel>>>24) & 0xff;
-                var r = pixel & 0xff;
-                var g = (pixel>>>8) & 0xff;
-                var b = (pixel>>>16) & 0xff;
-                pixel_key = r +','+ g + ',' + b + ',' + a;
-            }
-
-            view.encode('webp', {}, function(err, buffer) {
+            image.isSolid(function(err, solid, pixel) {
                 if (err) return callback(err);
-                buffer.solid = pixel_key;
-                return callback(err, buffer, {'Content-Type':'image/webp'});
+
+                // If source is in blank mode any solid tile is empty.
+                if (solid && source._blank) return callback(new Error('Tile does not exist'));
+
+                var pixel_key = '';
+                if (solid) {
+                    var a = (pixel>>>24) & 0xff;
+                    var r = pixel & 0xff;
+                    var g = (pixel>>>8) & 0xff;
+                    var b = (pixel>>>16) & 0xff;
+                    pixel_key = r +','+ g + ',' + b + ',' + a;
+                }
+
+                image.encode('webp', {}, function(err, buffer) {
+                    if (err) return callback(err);
+                    buffer.solid = pixel_key;
+                    return callback(err, buffer, {'Content-Type':'image/webp'});
+                });
             });
         });
     });
