@@ -16,7 +16,7 @@
     "mapnik": "~3.4.8",
     "sphericalmercator": "1.0.x",
     "mapnik-pool": "0.1.x",
-    "generic-pool":"~2.2.1"
+    "generic-pool":"~2.1.1"
   },
   "devDependencies": {
     "queue-async": "1.0.7",
