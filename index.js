@@ -98,10 +98,7 @@ Bridge.prototype.update = function(opts, callback) {
         { size: 256, bufferSize: 256 },
         { strict: false, base: this._base + '/' });
     this._im = ImagePool.newImage(512);
-    // If no nextTick the stale pool can be used to acquire new maps.
-    return immediate(function() {
-        this._map.destroyAllNow(callback);
-    }.bind(this));
+    return callback();
 };
 
 Bridge.prototype.close = function(callback) {
@@ -167,25 +164,25 @@ Bridge.getRaster = function(source, map, z, x, y, callback) {
         if (err) return callback(err);
         im.clear(function(err) {
             if (err) {
-                immediate(function() { source._map.release(map); });
-                immediate(function() { source._im.release(im); });
+                source._map.release(map);
+                source._im.release(im);
                 return callback(err);
             }
             map.render(im, function(err, image) {
-                immediate(function() { source._map.release(map); });
+                source._map.release(map);
                 if (err) {
-                    immediate(function() { source._im.release(im); });
+                    source._im.release(im);
                     return callback(err);
                 }
                 image.isSolid(function(err, solid, pixel) {
                     if (err) {
-                        immediate(function() { source._im.release(im); });
+                        source._im.release(im);
                         return callback(err);
                     }
 
                     // If source is in blank mode any solid tile is empty.
                     if (solid && source._blank) {
-                        immediate(function() { source._im.release(im); });
+                        source._im.release(im);
                         return callback(new Error('Tile does not exist'));
                     }
 
@@ -199,7 +196,7 @@ Bridge.getRaster = function(source, map, z, x, y, callback) {
                     }
 
                     image.encode('webp', {}, function(err, buffer) {
-                        immediate(function() { source._im.release(im); });
+                        source._im.release(im);
                         if (err) return callback(err);
                         buffer.solid = pixel_key;
                         return callback(err, buffer, {'Content-Type':'image/webp'});
@@ -252,7 +249,7 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
     opts.strictly_simple = true;
 
     map.render(new mapnik.VectorTile(+z,+x,+y), opts, function(err, image) {
-        immediate(function() { source._map.release(map); });
+        source._map.release(map)
         if (err) return callback(err);
         image.isSolid(function(err, solid, key) {
             if (err) return callback(err);
@@ -278,8 +275,10 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
 Bridge.prototype.getInfo = function(callback) {
     if (!this._map) return callback(new Error('Tilesource not loaded'));
 
+    var source = this;
     this._map.acquire(function(err, map) {
         if (err) return callback(err);
+        source._map.release(map)
 
         var params = map.parameters;
         var info = Object.keys(params).reduce(function(memo, key) {
@@ -321,8 +320,6 @@ Bridge.prototype.getInfo = function(callback) {
                 info.geocoder_shardlevel = 0;
             }
         }
-
-        immediate(function() { this._map.release(map); }.bind(this));
         return callback(null, info);
     }.bind(this));
 };
@@ -344,7 +341,7 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
         if (err) return callback(err);
         source._map.acquire(function(err, map) {
             if (err) return callback(err);
-            immediate(function() { source._map.release(map); });
+            source._map.release(map);
 
             var name = (map.parameters.geocoder_layer||'').split('.').shift() || '';
             var field = (map.parameters.geocoder_layer||'').split('.').pop() || 'carmen:text';
