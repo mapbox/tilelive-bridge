@@ -128,8 +128,7 @@ Bridge.getRaster = function(source, map, z, x, y, callback) {
     map.render(new mapnik.Image(512,512), function(err, image) {
         immediate(function() { source._map.release(map); });
         if (err) return callback(err);
-        var view = image.view(0,0,512,512);
-        view.isSolid(function(err, solid, pixel) {
+        image.isSolid(function(err, solid, pixel) {
             if (err) return callback(err);
 
             // If source is in blank mode any solid tile is empty.
@@ -144,7 +143,7 @@ Bridge.getRaster = function(source, map, z, x, y, callback) {
                 pixel_key = r +','+ g + ',' + b + ',' + a;
             }
 
-            view.encode('webp', {}, function(err, buffer) {
+            image.encode('webp', {}, function(err, buffer) {
                 if (err) return callback(err);
                 buffer.solid = pixel_key;
                 return callback(err, buffer, {'Content-Type':'image/webp'});
