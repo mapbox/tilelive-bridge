@@ -114,6 +114,8 @@ Bridge.prototype.close = function(callback) {
                     _im.drain(function() {
                         return _im.destroyAllNow(callback);
                     });                    
+                } else {
+                    return callback();
                 }
             });
         });    

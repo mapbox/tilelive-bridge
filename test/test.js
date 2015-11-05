@@ -20,8 +20,9 @@ var rasterxml = {
 
 (function() {
     tape('should fail without xml', function(assert) {
-        new Bridge({}, function(err) {
+        new Bridge({}, function(err, source) {
             assert.equal(err.message, 'No xml');
+            assert.ok(!source);
             assert.end();
         });
     });
@@ -29,7 +30,13 @@ var rasterxml = {
         new Bridge({ xml: xml.a, base:path.join(__dirname,'/') }, function(err, source) {
             assert.ifError(err);
             assert.ok(source);
-            assert.end();
+            assert.equal(0,source._map.getPoolSize());
+            assert.equal(0,source._im.getPoolSize());
+            source.close(function() {
+                assert.equal(0,source._map.getPoolSize());
+                assert.equal(0,source._im.getPoolSize());
+                assert.end();
+            });
         });
     });
     tape('should load from filepath', function(assert) {
@@ -39,7 +46,13 @@ var rasterxml = {
             assert.equal(source._blank, false);
             assert.equal(source._xml, xml.a);
             assert.equal(source._base, __dirname);
-            assert.end();
+            assert.equal(0,source._map.getPoolSize());
+            assert.equal(0,source._im.getPoolSize());
+            source.close(function() {
+                assert.equal(0,source._map.getPoolSize());
+                assert.equal(0,source._im.getPoolSize());
+                assert.end();
+            });
         });
     });
     tape('should load with listener', function(assert) {
@@ -50,7 +63,13 @@ var rasterxml = {
             assert.equal(source._blank, false);
             assert.equal(source._xml, xml.a);
             assert.equal(source._base, __dirname);
-            assert.end();
+            assert.equal(0,source._map.getPoolSize());
+            assert.equal(0,source._im.getPoolSize());
+            source.close(function() {
+                assert.equal(0,source._map.getPoolSize());
+                assert.equal(0,source._im.getPoolSize());
+                assert.end();
+            });
         });
     });
     tape('should load query params', function(assert) {
@@ -86,7 +105,13 @@ var rasterxml = {
                 assert.deepEqual([-180,-85.0511,180,85.0511], info.bounds);
                 assert.deepEqual({"level2":"property"}, info.level1, 'JSON key stores deep attribute data');
                 assert.deepEqual(0, info.minzoom, 'JSON key does not overwrite other params');
-                assert.end();
+                assert.equal(1,source._map.getPoolSize());
+                assert.equal(0,source._im.getPoolSize());
+                source.close(function() {
+                    assert.equal(0,source._map.getPoolSize());
+                    assert.equal(0,source._im.getPoolSize());
+                    assert.end();
+                });
             });
         });
     });
@@ -102,7 +127,13 @@ var rasterxml = {
                     source.getInfo(function(err, info) {
                         assert.ifError(err);
                         assert.equal('test-b', info.name);
-                        assert.end();
+                        assert.equal(1,source._map.getPoolSize());
+                        assert.equal(0,source._im.getPoolSize());
+                        source.close(function() {
+                            assert.equal(0,source._map.getPoolSize());
+                            assert.equal(0,source._im.getPoolSize());
+                            assert.end();
+                        });
                     });
                 });
             });
