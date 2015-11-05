@@ -5,13 +5,14 @@ var fs = require('fs');
 var qs = require('querystring');
 var sm = new (require('sphericalmercator'))();
 var immediate = global.setImmediate || process.nextTick;
-var Pool = require('generic-pool').Pool;
+var mapnik_pool = require('mapnik-pool');
+var Pool = mapnik_pool.Pool;
 var os = require('os');
 
 // Register datasource plugins
 mapnik.register_default_input_plugins();
 
-var mapnikPool = require('mapnik-pool')(mapnik);
+var mapnikPool = mapnik_pool(mapnik);
 
 var image_pooler = function() {
     return {
