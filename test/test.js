@@ -20,9 +20,8 @@ var rasterxml = {
 
 (function() {
     tape('should fail without xml', function(assert) {
-        new Bridge({}, function(err, source) {
+        new Bridge({}, function(err) {
             assert.equal(err.message, 'No xml');
-            assert.ok(!source);
             assert.end();
         });
     });
@@ -30,13 +29,9 @@ var rasterxml = {
         new Bridge({ xml: xml.a, base:path.join(__dirname,'/') }, function(err, source) {
             assert.ifError(err);
             assert.ok(source);
-            assert.equal(0,source._map.getPoolSize());
-            assert.equal(0,source._im.getPoolSize());
             source.close(function() {
-                assert.equal(0,source._map.getPoolSize());
-                assert.equal(0,source._im.getPoolSize());
                 assert.end();
-            });
+            })
         });
     });
     tape('should load from filepath', function(assert) {
@@ -46,13 +41,9 @@ var rasterxml = {
             assert.equal(source._blank, false);
             assert.equal(source._xml, xml.a);
             assert.equal(source._base, __dirname);
-            assert.equal(0,source._map.getPoolSize());
-            assert.equal(0,source._im.getPoolSize());
             source.close(function() {
-                assert.equal(0,source._map.getPoolSize());
-                assert.equal(0,source._im.getPoolSize());
                 assert.end();
-            });
+            })
         });
     });
     tape('should load with listener', function(assert) {
@@ -63,13 +54,9 @@ var rasterxml = {
             assert.equal(source._blank, false);
             assert.equal(source._xml, xml.a);
             assert.equal(source._base, __dirname);
-            assert.equal(0,source._map.getPoolSize());
-            assert.equal(0,source._im.getPoolSize());
             source.close(function() {
-                assert.equal(0,source._map.getPoolSize());
-                assert.equal(0,source._im.getPoolSize());
                 assert.end();
-            });
+            })
         });
     });
     tape('should load query params', function(assert) {
@@ -80,7 +67,7 @@ var rasterxml = {
             assert.equal(source._base, __dirname);
             source.close(function() {
                 assert.end();
-            });
+            })
         });
     });
     tape('#open should call all listeners', function(assert) {
@@ -92,7 +79,7 @@ var rasterxml = {
             if (!--remaining) {
                 source.close(function() {
                     assert.end();
-                });
+                })
             }
         });
     });
@@ -111,13 +98,9 @@ var rasterxml = {
                 assert.deepEqual([-180,-85.0511,180,85.0511], info.bounds);
                 assert.deepEqual({"level2":"property"}, info.level1, 'JSON key stores deep attribute data');
                 assert.deepEqual(0, info.minzoom, 'JSON key does not overwrite other params');
-                assert.equal(1,source._map.getPoolSize());
-                assert.equal(0,source._im.getPoolSize());
                 source.close(function() {
-                    assert.equal(0,source._map.getPoolSize());
-                    assert.equal(0,source._im.getPoolSize());
                     assert.end();
-                });
+                })
             });
         });
     });
@@ -133,13 +116,9 @@ var rasterxml = {
                     source.getInfo(function(err, info) {
                         assert.ifError(err);
                         assert.equal('test-b', info.name);
-                        assert.equal(1,source._map.getPoolSize());
-                        assert.equal(0,source._im.getPoolSize());
                         source.close(function() {
-                            assert.equal(0,source._map.getPoolSize());
-                            assert.equal(0,source._im.getPoolSize());
                             assert.end();
-                        });
+                        })
                     });
                 });
             });
@@ -236,7 +215,7 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
         });
     });
     Object.keys(tests).forEach(function(source) {
-        tape('teardown 1', function(assert) {
+        tape('teardown', function(assert) {
             sources[source].close(function() {
                 assert.end();
             });
@@ -293,7 +272,7 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
         });
     });
     Object.keys(tests).forEach(function(source) {
-        tape('teardown 2', function(assert) {
+        tape('teardown', function(assert) {
             sources[source].close(function() {
                 assert.end();
             });
@@ -303,9 +282,9 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
 
 (function() {
     var source;
-    tape('setup', function(assert) {
+    tape('index setup', function(assert) {
         new Bridge({ xml:xml.a, base:path.join(__dirname,'/'), blank:true }, function(err, s) {
-            assert.ifError(err);
+            if (err) return done(err);
             source = s;
             assert.end();
         });
@@ -388,9 +367,14 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
             });
         });
     });
+    tape('index teardown', function(assert) {
+        source.close(function() {
+            assert.end();
+        });
+    });
     tape('itp setup', function(assert) {
         new Bridge({ xml:xml.itp, base:path.join(__dirname,'/') }, function(err, s) {
-            assert.ifError(err);
+            if (err) return done(err);
             source = s;
             assert.end();
         });
@@ -412,12 +396,8 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
             assert.end();
         });
     });
-    tape('teardown 3', function(assert) {
+    tape('itp teardown', function(assert) {
         source.close(function() {
-            // Gross hack to end the endless setTimeout loop upstream in
-            // mapnik-pool => generic-pool. Fix upstream!
-            // https://github.com/mapbox/tilelive-bridge/issues/29
-            global.setTimeout = function() {};
             assert.end();
         });
     });
