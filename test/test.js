@@ -29,7 +29,9 @@ var rasterxml = {
         new Bridge({ xml: xml.a, base:path.join(__dirname,'/') }, function(err, source) {
             assert.ifError(err);
             assert.ok(source);
-            assert.end();
+            source.close(function() {
+                assert.end();
+            })
         });
     });
     tape('should load from filepath', function(assert) {
@@ -39,7 +41,9 @@ var rasterxml = {
             assert.equal(source._blank, false);
             assert.equal(source._xml, xml.a);
             assert.equal(source._base, __dirname);
-            assert.end();
+            source.close(function() {
+                assert.end();
+            })
         });
     });
     tape('should load with listener', function(assert) {
@@ -50,7 +54,9 @@ var rasterxml = {
             assert.equal(source._blank, false);
             assert.equal(source._xml, xml.a);
             assert.equal(source._base, __dirname);
-            assert.end();
+            source.close(function() {
+                assert.end();
+            })
         });
     });
     tape('should load query params', function(assert) {
@@ -59,7 +65,9 @@ var rasterxml = {
             assert.equal(source._blank, true);
             assert.equal(source._xml, xml.a);
             assert.equal(source._base, __dirname);
-            assert.end();
+            source.close(function() {
+                assert.end();
+            })
         });
     });
     tape('#open should call all listeners', function(assert) {
@@ -68,7 +76,11 @@ var rasterxml = {
         for (var i = 0, l = remaining; i < l; i++) b.open(function(err, source) {
             assert.ifError(err);
             assert.ok(source);
-            if (!--remaining) assert.end();
+            if (!--remaining) {
+                source.close(function() {
+                    assert.end();
+                })
+            }
         });
     });
     tape('should get info', function(assert) {
@@ -86,7 +98,9 @@ var rasterxml = {
                 assert.deepEqual([-180,-85.0511,180,85.0511], info.bounds);
                 assert.deepEqual({"level2":"property"}, info.level1, 'JSON key stores deep attribute data');
                 assert.deepEqual(0, info.minzoom, 'JSON key does not overwrite other params');
-                assert.end();
+                source.close(function() {
+                    assert.end();
+                })
             });
         });
     });
@@ -102,7 +116,9 @@ var rasterxml = {
                     source.getInfo(function(err, info) {
                         assert.ifError(err);
                         assert.equal('test-b', info.name);
-                        assert.end();
+                        source.close(function() {
+                            assert.end();
+                        })
                     });
                 });
             });
@@ -198,6 +214,13 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
             });
         });
     });
+    Object.keys(tests).forEach(function(source) {
+        tape('teardown', function(assert) {
+            sources[source].close(function() {
+                assert.end();
+            });
+        });
+    });
 })();
 
 (function() {
@@ -248,11 +271,18 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
             });
         });
     });
+    Object.keys(tests).forEach(function(source) {
+        tape('teardown', function(assert) {
+            sources[source].close(function() {
+                assert.end();
+            });
+        });
+    });
 })();
 
 (function() {
     var source;
-    tape('setup', function(assert) {
+    tape('index setup', function(assert) {
         new Bridge({ xml:xml.a, base:path.join(__dirname,'/'), blank:true }, function(err, s) {
             if (err) return done(err);
             source = s;
@@ -333,13 +363,13 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
                     'Benin',
                     'Solomon Islands'
                 ], docs.map(function(d) { return d.properties.NAME }));
-
-                // Gross hack to end the endless setTimeout loop upstream in
-                // mapnik-pool => generic-pool. Fix upstream!
-                global.setTimeout = function() {};
-
                 assert.end();
             });
+        });
+    });
+    tape('index teardown', function(assert) {
+        source.close(function() {
+            assert.end();
         });
     });
     tape('itp setup', function(assert) {
@@ -363,6 +393,11 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
             assert.deepEqual(docs[0].properties['carmen:rtohn'], ['98','198']);
             assert.deepEqual(docs[0].properties['carmen:parityr'], ['E', 'E']);
             assert.deepEqual(docs[0].properties['carmen:parityl'], ['O', 'O']);
+            assert.end();
+        });
+    });
+    tape('itp teardown', function(assert) {
+        source.close(function() {
             assert.end();
         });
     });
