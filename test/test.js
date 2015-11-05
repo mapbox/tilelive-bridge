@@ -78,7 +78,9 @@ var rasterxml = {
             assert.equal(source._blank, true);
             assert.equal(source._xml, xml.a);
             assert.equal(source._base, __dirname);
-            assert.end();
+            source.close(function() {
+                assert.end();
+            });
         });
     });
     tape('#open should call all listeners', function(assert) {
@@ -87,7 +89,11 @@ var rasterxml = {
         for (var i = 0, l = remaining; i < l; i++) b.open(function(err, source) {
             assert.ifError(err);
             assert.ok(source);
-            if (!--remaining) assert.end();
+            if (!--remaining) {
+                source.close(function() {
+                    assert.end();
+                });
+            }
         });
     });
     tape('should get info', function(assert) {
@@ -229,6 +235,13 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
             });
         });
     });
+    Object.keys(tests).forEach(function(source) {
+        tape('teardown 1', function(assert) {
+            sources[source].close(function() {
+                assert.end();
+            });
+        });
+    });
 })();
 
 (function() {
@@ -279,13 +292,20 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
             });
         });
     });
+    Object.keys(tests).forEach(function(source) {
+        tape('teardown 2', function(assert) {
+            sources[source].close(function() {
+                assert.end();
+            });
+        });
+    });
 })();
 
 (function() {
     var source;
     tape('setup', function(assert) {
         new Bridge({ xml:xml.a, base:path.join(__dirname,'/'), blank:true }, function(err, s) {
-            if (err) return done(err);
+            assert.ifError(err);
             source = s;
             assert.end();
         });
@@ -364,18 +384,13 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
                     'Benin',
                     'Solomon Islands'
                 ], docs.map(function(d) { return d.properties.NAME }));
-
-                // Gross hack to end the endless setTimeout loop upstream in
-                // mapnik-pool => generic-pool. Fix upstream!
-                global.setTimeout = function() {};
-
                 assert.end();
             });
         });
     });
     tape('itp setup', function(assert) {
         new Bridge({ xml:xml.itp, base:path.join(__dirname,'/') }, function(err, s) {
-            if (err) return done(err);
+            assert.ifError(err);
             source = s;
             assert.end();
         });
@@ -394,6 +409,15 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
             assert.deepEqual(docs[0].properties['carmen:rtohn'], ['98','198']);
             assert.deepEqual(docs[0].properties['carmen:parityr'], ['E', 'E']);
             assert.deepEqual(docs[0].properties['carmen:parityl'], ['O', 'O']);
+            assert.end();
+        });
+    });
+    tape('teardown 3', function(assert) {
+        source.close(function() {
+            // Gross hack to end the endless setTimeout loop upstream in
+            // mapnik-pool => generic-pool. Fix upstream!
+            // https://github.com/mapbox/tilelive-bridge/issues/29
+            global.setTimeout = function() {};
             assert.end();
         });
     });
