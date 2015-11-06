@@ -71,12 +71,13 @@ Bridge.prototype.update = function(opts, callback) {
     // Unset type. Will be re-set on first getTile.
     this._type = undefined;
     this._xml = opts.xml;
-    this._map = mapnikPool.fromString(this._xml,
-        { size: 256, bufferSize: 256 },
-        { strict: false, base: this._base + '/' });
-    // If no nextTick the stale pool can be used to acquire new maps.
-    return immediate(function() {
-        this._map.destroyAllNow(callback);
+    this._readonly_map = new mapnik.Map(1,1);
+    var mopts = { strict: false, base: this._base + '/' };
+    this.close(function() {
+        this._map = mapnikPool.fromString(this._xml,
+            { size: 256, bufferSize: 256 },
+            mopts);
+        return callback();
     }.bind(this));
 };
 
@@ -126,7 +127,7 @@ Bridge.getRaster = function(source, map, z, x, y, callback) {
     map.resize(512,512);
     map.extent = sm.bbox(+x,+y,+z, false, '900913');
     map.render(new mapnik.Image(512,512), function(err, image) {
-        immediate(function() { source._map.release(map); });
+        source._map.release(map);
         if (err) return callback(err);
         var view = image.view(0,0,512,512);
         view.isSolid(function(err, solid, pixel) {
@@ -195,7 +196,7 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
     opts.strictly_simple = true;
 
     map.render(new mapnik.VectorTile(+z,+x,+y), opts, function(err, image) {
-        immediate(function() { source._map.release(map); });
+        source._map.release(map);
         if (err) return callback(err);
         image.isSolid(function(err, solid, key) {
             if (err) return callback(err);
@@ -265,7 +266,7 @@ Bridge.prototype.getInfo = function(callback) {
             }
         }
 
-        immediate(function() { this._map.release(map); }.bind(this));
+        this._map.release(map);
         return callback(null, info);
     }.bind(this));
 };
@@ -287,7 +288,7 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
         if (err) return callback(err);
         source._map.acquire(function(err, map) {
             if (err) return callback(err);
-            immediate(function() { source._map.release(map); });
+            source._map.release(map);
 
             var name = (map.parameters.geocoder_layer||'').split('.').shift() || '';
             var field = (map.parameters.geocoder_layer||'').split('.').pop() || 'carmen:text';
