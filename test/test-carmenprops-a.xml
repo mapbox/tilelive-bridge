@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<Map srs="+proj=merc +lon_0=0 +lat_ts=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs" background-color="steelblue">
+
+<Parameters>
+  <Parameter name="bounds">-180,-85.0511,180,85.0511</Parameter>
+  <Parameter name="center">0,0,2</Parameter>
+  <Parameter name="minzoom">0</Parameter>
+  <Parameter name="maxzoom">{{MAXZOOM}}</Parameter>
+  <Parameter name="geocoder_layer">data.carmen:text</Parameter>
+  <Parameter name="geocoder_resolution">0</Parameter>
+</Parameters>
+
+<Layer name="data" srs="+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs">
+    <Datasource>
+        <Parameter name="file">data/test_carmenprops.json</Parameter>
+        <Parameter name="type">ogr</Parameter>
+        <Parameter name="layer_by_index">0</Parameter>
+    </Datasource>
+</Layer>
+
+</Map>
