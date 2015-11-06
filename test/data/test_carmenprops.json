@@ -1,0 +1,38 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "bbox": "-10.0, -10.0, 10.0, 10.0",
+        "carmen:text": "Test Street",
+        "carmen:center": "-10.0, 10.0",
+      },
+      "geometry": {
+        "type": "MultiLineString",
+        "coordinates": [
+          [
+            [
+              0,
+              0
+            ],
+            [
+              10,
+              10
+            ]
+          ],
+          [
+            [
+              10,
+              10
+            ],
+            [
+              20,
+              20
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

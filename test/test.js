@@ -6,17 +6,50 @@ var zlib = require('zlib');
 var tape = require('tape');
 var UPDATE = process.env.UPDATE;
 var deepEqual = require('deep-equal');
+var util = require('util');
 
 // Load fixture data.
 var xml = {
     a: fs.readFileSync(path.resolve(path.join(__dirname,'/test-a.xml')), 'utf8'),
     b: fs.readFileSync(path.resolve(path.join(__dirname,'/test-b.xml')), 'utf8'),
-    itp: fs.readFileSync(path.resolve(path.join(__dirname,'/itp.xml')), 'utf8')
+    itp: fs.readFileSync(path.resolve(path.join(__dirname,'/itp.xml')), 'utf8'),
+    carmen_a: fs.readFileSync(path.resolve(path.join(__dirname,'/test-carmenprops-a.xml')), 'utf8')
 };
 var rasterxml = {
     a: fs.readFileSync(path.resolve(path.join(__dirname,'/raster-a.xml')), 'utf8'),
     b: fs.readFileSync(path.resolve(path.join(__dirname,'/raster-b.xml')), 'utf8')
 };
+
+(function() {
+    tape('indexable doc carmen property normalization', function(assert) {
+        new Bridge({ xml:xml.carmen_a.replace('{{MAXZOOM}}', 13), base:path.join(__dirname,'/'), blank:true }, function(err, s) {
+            assert.ifError(err, 'created Bridge object w/o error');
+            s.getIndexableDocs({ limit: 10 }, function(err, docs, pointer) {
+                assert.ifError(err, 'got docs');
+                assert.deepEqual(docs[0].bbox, [-10.0, -10.0, 10.0, 10.0], 'bbox is properly parsed & split');
+                assert.deepEqual(docs[0].properties['carmen:center'], [-10.0, 10.0], 'carmen:center is properly parsed & split');
+                assert.end();
+            });
+        });
+    });
+})();
+
+
+(function() {
+    [[13, 3], [9, 2], [7, 1], [6, 0]].forEach(function(maxzoomAndExpectedShardLevel) {
+        tape(util.format('index setup - zoomlevel %d produces expected shardlevel %d', maxzoomAndExpectedShardLevel[0], maxzoomAndExpectedShardLevel[1]), function(assert) {
+            new Bridge({ xml:xml.carmen_a.replace('{{MAXZOOM}}', maxzoomAndExpectedShardLevel[0]), base:path.join(__dirname,'/'), blank:true }, function(err, s) {
+                assert.ifError(err, 'created Bridge object w/o error');
+                s.getInfo(function(err, info) {
+                    assert.ifError(err, 'fetched Bridge source info w/o error');
+                    assert.equals(info.geocoder_shardlevel, maxzoomAndExpectedShardLevel[1], 'found expected shardlevel (based on maxzoom)');
+                    assert.end();
+                });
+            });
+        });
+    });
+})();
+
 
 (function() {
     tape('should fail without xml', function(assert) {
@@ -416,5 +449,3 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
         });
     });
 })();
-
-
