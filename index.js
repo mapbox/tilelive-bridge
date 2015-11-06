@@ -215,7 +215,7 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
         Simplification works to generalize geometries before encoding into vector tiles.
 
         The 'simplify_distance' value works in integer space over a 4096 pixel grid and uses
-        the Douglas–Peucker algorithm.
+        the Douglas-Peucker algorithm.
 
         The 4096 results from the path_multiplier used to maintain precision (default of 16)
         and tile width (default of 256)
