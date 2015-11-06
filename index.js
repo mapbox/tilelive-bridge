@@ -184,8 +184,6 @@ Bridge.getRaster = function(source, map, im, z, x, y, callback) {
 
             var pixel_key = '';
             if (solid) {
-                console.log('here')
-                process.exit();
                 var a = (pixel>>>24) & 0xff;
                 var r = pixel & 0xff;
                 var g = (pixel>>>8) & 0xff;

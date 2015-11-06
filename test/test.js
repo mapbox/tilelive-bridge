@@ -17,7 +17,8 @@ var xml = {
 };
 var rasterxml = {
     a: fs.readFileSync(path.resolve(path.join(__dirname,'/raster-a.xml')), 'utf8'),
-    b: fs.readFileSync(path.resolve(path.join(__dirname,'/raster-b.xml')), 'utf8')
+    b: fs.readFileSync(path.resolve(path.join(__dirname,'/raster-b.xml')), 'utf8'),
+    c: fs.readFileSync(path.resolve(path.join(__dirname,'/raster-c.xml')), 'utf8')
 };
 
 (function() {
@@ -264,11 +265,13 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
 (function() {
     var sources = {
         a: new Bridge({ xml:rasterxml.a, base:path.join(__dirname,'/'), blank:true }),
-        b: new Bridge({ xml:rasterxml.b, base:path.join(__dirname,'/'), blank:true })
+        b: new Bridge({ xml:rasterxml.b, base:path.join(__dirname,'/'), blank:true }),
+        c: new Bridge({ xml:rasterxml.c, base:path.join(__dirname,'/'), blank:false })
     };
     var tests = {
         a: ['0.0.0', '1.0.0', '2.1.1', '3.2.2', '4.3.3', '5.4.4'],
-        b: ['0.0.0', '1.0.0']
+        b: ['0.0.0', '1.0.0'],
+        c: ['0.0.0', '1.0.0']
     };
     Object.keys(tests).forEach(function(source) {
         tape('setup', function(assert) {
@@ -299,7 +302,10 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
                     if (obj.solid) assert.equal(buffer.solid, obj.solid);
 
                     var filepath = path.join(__dirname,'/expected-raster/' + source + '.' + key + '.webp');
-                    if (UPDATE || !fs.existsSync(filepath)) fs.writeFileSync(filepath, buffer);
+                    if (UPDATE || !fs.existsSync(filepath)) {
+                        console.log('Generating image at ' + filepath);
+                        fs.writeFileSync(filepath, buffer);
+                    }
 
                     var resultImage = new mapnik.Image.fromBytesSync(buffer);
                     var expectImage = new mapnik.Image.fromBytesSync(fs.readFileSync(filepath));
