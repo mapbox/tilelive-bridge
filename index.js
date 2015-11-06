@@ -5,11 +5,28 @@ var fs = require('fs');
 var qs = require('querystring');
 var sm = new (require('sphericalmercator'))();
 var immediate = global.setImmediate || process.nextTick;
+var mapnik_pool = require('mapnik-pool');
+var Pool = mapnik_pool.Pool;
+var os = require('os');
 
 // Register datasource plugins
 mapnik.register_default_input_plugins();
 
-var mapnikPool = require('mapnik-pool')(mapnik);
+var mapnikPool = mapnik_pool(mapnik);
+
+var ImagePool = function(size) {
+    return Pool({
+        create: create,
+        destroy: destroy,
+        max: os.cpus().length * 2
+    });
+    function create(callback) {
+        return callback(null,new mapnik.Image(size,size));
+    }
+    function destroy(im) {
+        delete im;
+    }
+}
 
 module.exports = Bridge;
 
@@ -79,20 +96,23 @@ Bridge.prototype.update = function(opts, callback) {
             this._map = mapnikPool.fromString(this._xml,
                 { size: 256, bufferSize: 256 },
                 mopts);
+            this._im = ImagePool(512);
             return callback();
         }.bind(this));
     }.bind(this));
 };
 
-Bridge.prototype.close = function(callback) {
-    var _map = this._map;
-
-    if (!_map) return callback();
-
-    _map.drain(function() {
-        _map.destroyAllNow(callback);
+function poolDrain(pool,callback) {
+    if (!pool) return callback();
+    pool.drain(function() {
+        pool.destroyAllNow(callback);
     });
+}
 
+Bridge.prototype.close = function(callback) {
+    poolDrain(this._map,function() {
+        poolDrain(this._im,callback);
+    }.bind(this));
 };
 
 Bridge.prototype.getTile = function(z, x, y, callback) {
@@ -118,18 +138,24 @@ Bridge.prototype.getTile = function(z, x, y, callback) {
         }
 
         if (source._type === 'raster') {
-            Bridge.getRaster(source, map, z, x, y, callback);
+            source._im.acquire(function(err, im) {
+                Bridge.getRaster(source, map, im, z, x, y, function(err,buffer,headers) {
+                    source._im.release(im);
+                    return callback(err,buffer,headers);
+                });
+            });
         } else {
             Bridge.getVector(source, map, z, x, y, callback);
         }
     });
 };
 
-Bridge.getRaster = function(source, map, z, x, y, callback) {
+Bridge.getRaster = function(source, map, im, z, x, y, callback) {
     map.bufferSize = 0;
     map.resize(512,512);
     map.extent = sm.bbox(+x,+y,+z, false, '900913');
-    map.render(new mapnik.Image(512,512), function(err, image) {
+    im.clear();
+    map.render(im, function(err, image) {
         source._map.release(map);
         if (err) return callback(err);
         image.isSolid(function(err, solid, pixel) {
