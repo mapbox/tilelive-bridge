@@ -31,10 +31,12 @@ tape('raster bench', function(assert) {
     }
     q.awaitAll(function(err, res) {
         assert.ifError(err);
-        time = +(new Date()) - time;
-        var rate = total/(time/1000);
-        assert.equal(rate > 20, true, 'render ' + total + ' tiles @ ' + rate.toFixed(1) + ' tiles/sec');
-        assert.end();
+        source.close(function() {
+            time = +(new Date()) - time;
+            var rate = total/(time/1000);
+            assert.equal(rate > 20, true, 'render ' + total + ' tiles @ ' + rate.toFixed(1) + ' tiles/sec');
+            assert.end();
+        })
     });
 });
 
