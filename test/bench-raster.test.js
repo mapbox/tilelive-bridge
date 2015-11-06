@@ -6,7 +6,7 @@ var queue = require('queue-async');
 
 var source;
 
-tape('steup', function(assert) {
+tape('setup', function(assert) {
     new Bridge({ xml: fs.readFileSync(path.resolve(path.join(__dirname,'/raster-a.xml')), 'utf8'), base:path.join(__dirname,'/'), blank:true }, function(err,s) {
         source = s;
         assert.end();
