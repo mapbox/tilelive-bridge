@@ -4,7 +4,14 @@ var fs = require('fs');
 var tape = require('tape');
 var queue = require('queue-async');
 
-var source = new Bridge({ xml: fs.readFileSync(path.resolve(path.join(__dirname,'/raster-a.xml')), 'utf8'), base:path.join(__dirname,'/'), blank:true });
+var source;
+
+tape('steup', function(assert) {
+    new Bridge({ xml: fs.readFileSync(path.resolve(path.join(__dirname,'/raster-a.xml')), 'utf8'), base:path.join(__dirname,'/'), blank:true }, function(err,s) {
+        source = s;
+        assert.end();
+    });
+});
 
 tape('warmup', function(assert) {
     source.getTile(0, 0, 0, assert.end);
