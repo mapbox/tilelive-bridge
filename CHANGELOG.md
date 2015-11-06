@@ -1,5 +1,14 @@
 # Changlog
 
+## 2.2.1
+
+ - Upgraded to mapnik-pool@0.1.2 (with an upgrade to generic-pool@2.2.1)
+ - Added the usage of a readonly `mapnik.Map` object for readonly operations
+   - Now only `getTile` uses pooled maps
+   - Now an invalid XML will throw at source creation rather than at source usage
+ - Now pooling images to reduce allocation overhead
+ - Improved tests to avoid potential hangs at exit due to unclosed sources
+
 ## 2.2.0
 
  - Render VTs with strictly_simple flag.
