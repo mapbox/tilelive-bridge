@@ -71,12 +71,16 @@ Bridge.prototype.update = function(opts, callback) {
     // Unset type. Will be re-set on first getTile.
     this._type = undefined;
     this._xml = opts.xml;
-    this._map = mapnikPool.fromString(this._xml,
-        { size: 256, bufferSize: 256 },
-        { strict: false, base: this._base + '/' });
-    // If no nextTick the stale pool can be used to acquire new maps.
-    return immediate(function() {
-        this._map.destroyAllNow(callback);
+    this._readonly_map = new mapnik.Map(1,1);
+    var mopts = { strict: false, base: this._base + '/' };
+    this._readonly_map.fromString(this._xml,mopts,function(err) {
+        if (err) return callback(err);
+        this.close(function() {
+            this._map = mapnikPool.fromString(this._xml,
+                { size: 256, bufferSize: 256 },
+                mopts);
+            return callback();
+        }.bind(this));
     }.bind(this));
 };
 
@@ -126,10 +130,9 @@ Bridge.getRaster = function(source, map, z, x, y, callback) {
     map.resize(512,512);
     map.extent = sm.bbox(+x,+y,+z, false, '900913');
     map.render(new mapnik.Image(512,512), function(err, image) {
-        immediate(function() { source._map.release(map); });
+        source._map.release(map);
         if (err) return callback(err);
-        var view = image.view(0,0,512,512);
-        view.isSolid(function(err, solid, pixel) {
+        image.isSolid(function(err, solid, pixel) {
             if (err) return callback(err);
 
             // If source is in blank mode any solid tile is empty.
@@ -144,7 +147,7 @@ Bridge.getRaster = function(source, map, z, x, y, callback) {
                 pixel_key = r +','+ g + ',' + b + ',' + a;
             }
 
-            view.encode('webp', {}, function(err, buffer) {
+            image.encode('webp', {}, function(err, buffer) {
                 if (err) return callback(err);
                 buffer.solid = pixel_key;
                 return callback(err, buffer, {'Content-Type':'image/webp'});
@@ -195,7 +198,7 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
     opts.strictly_simple = true;
 
     map.render(new mapnik.VectorTile(+z,+x,+y), opts, function(err, image) {
-        immediate(function() { source._map.release(map); });
+        source._map.release(map);
         if (err) return callback(err);
         image.isSolid(function(err, solid, key) {
             if (err) return callback(err);
@@ -219,59 +222,55 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
 };
 
 Bridge.prototype.getInfo = function(callback) {
-    if (!this._map) return callback(new Error('Tilesource not loaded'));
+    var map = this._readonly_map;
+    if (!map) return callback(new Error('Tilesource not loaded'));
 
-    this._map.acquire(function(err, map) {
-        if (err) return callback(err);
-
-        var params = map.parameters;
-        var info = Object.keys(params).reduce(function(memo, key) {
-            switch (key) {
-            // The special 'json' key/value pair allows JSON to be serialized
-            // and merged into the metadata of a mapnik XML based source. This
-            // enables nested properties and non-string datatypes to be
-            // captured by mapnik XML.
-            case 'json':
-                try {
-                    var jsondata = JSON.parse(params[key]);
-                    Object.keys(jsondata).reduce(function(memo, key) {
-                        memo[key] = memo[key] || jsondata[key];
-                        return memo;
-                    }, memo);
-                }
-                catch (err) { return callback(err); }
-                break;
-            case 'bounds':
-            case 'center':
-                memo[key] = params[key].split(',').map(function(v) { return parseFloat(v) });
-                break;
-            default:
-                memo[key] = params[key];
-                break;
+    var params = map.parameters;
+    var info = Object.keys(params).reduce(function(memo, key) {
+        switch (key) {
+        // The special 'json' key/value pair allows JSON to be serialized
+        // and merged into the metadata of a mapnik XML based source. This
+        // enables nested properties and non-string datatypes to be
+        // captured by mapnik XML.
+        case 'json':
+            try {
+                var jsondata = JSON.parse(params[key]);
+                Object.keys(jsondata).reduce(function(memo, key) {
+                    memo[key] = memo[key] || jsondata[key];
+                    return memo;
+                }, memo);
             }
-            return memo;
-        }, {});
-
-        // Set an intelligent default for geocoder_shardlevel if not set.
-        if (info.geocoder_layer && !('geocoder_shardlevel' in info)) {
-            if (info.maxzoom > 12) {
-                info.geocoder_shardlevel = 3;
-            } else if (info.maxzoom > 8) {
-                info.geocoder_shardlevel = 2;
-            } else if (info.maxzoom > 6) {
-                info.geocoder_shardlevel = 1;
-            } else {
-                info.geocoder_shardlevel = 0;
-            }
+            catch (err) { return callback(err); }
+            break;
+        case 'bounds':
+        case 'center':
+            memo[key] = params[key].split(',').map(function(v) { return parseFloat(v) });
+            break;
+        default:
+            memo[key] = params[key];
+            break;
         }
+        return memo;
+    }, {});
 
-        immediate(function() { this._map.release(map); }.bind(this));
-        return callback(null, info);
-    }.bind(this));
+    // Set an intelligent default for geocoder_shardlevel if not set.
+    if (info.geocoder_layer && !('geocoder_shardlevel' in info)) {
+        if (info.maxzoom > 12) {
+            info.geocoder_shardlevel = 3;
+        } else if (info.maxzoom > 8) {
+            info.geocoder_shardlevel = 2;
+        } else if (info.maxzoom > 6) {
+            info.geocoder_shardlevel = 1;
+        } else {
+            info.geocoder_shardlevel = 0;
+        }
+    }
+    return callback(null, info);
 };
 
 Bridge.prototype.getIndexableDocs = function(pointer, callback) {
-    if (!this._map) return callback(new Error('Tilesource not loaded'));
+    var map = this._readonly_map;
+    if (!map) return callback(new Error('Tilesource not loaded'));
 
     pointer = pointer || {};
     pointer.limit = pointer.limit || 10000;
@@ -285,95 +284,90 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
 
     source.getInfo(function(err, info) {
         if (err) return callback(err);
-        source._map.acquire(function(err, map) {
-            if (err) return callback(err);
-            immediate(function() { source._map.release(map); });
+        var name = (map.parameters.geocoder_layer||'').split('.').shift() || '';
+        var field = (map.parameters.geocoder_layer||'').split('.').pop() || 'carmen:text';
+        var zoom = info.maxzoom + parseInt(map.parameters.geocoder_resolution||0, 10);
+        var layer = name ?
+            map.layers().filter(function(l) { return l.name === name })[0] :
+            map.layers()[0];
 
-            var name = (map.parameters.geocoder_layer||'').split('.').shift() || '';
-            var field = (map.parameters.geocoder_layer||'').split('.').pop() || 'carmen:text';
-            var zoom = info.maxzoom + parseInt(map.parameters.geocoder_resolution||0, 10);
-            var layer = name ?
-                map.layers().filter(function(l) { return l.name === name })[0] :
-                map.layers()[0];
+        if (!zoom) return callback(new Error('No geocoding zoom defined'));
+        if (!layer) return callback(new Error('No geocoding layer found'));
+        if (!knownsrs[layer.srs]) return callback(new Error('Unknown layer SRS'));
 
-            if (!zoom) return callback(new Error('No geocoding zoom defined'));
-            if (!layer) return callback(new Error('No geocoding layer found'));
-            if (!knownsrs[layer.srs]) return callback(new Error('Unknown layer SRS'));
+        var srs = knownsrs[layer.srs];
+        if (!pointer.featureset) pointer.featureset = layer.datasource.featureset();
+        var featureset = pointer.featureset;
+        var params = layer.datasource.parameters();
+        var docs = [];
+        var cache = {};
+        var i = 0;
 
-            var srs = knownsrs[layer.srs];
-            if (!pointer.featureset) pointer.featureset = layer.datasource.featureset();
-            var featureset = pointer.featureset;
-            var params = layer.datasource.parameters();
-            var docs = [];
-            var cache = {};
-            var i = 0;
-
-            function feature() {
-                if (i === pointer.limit) {
-                    return callback(null, docs, pointer);
-                }
-
-                var f = featureset.next();
-
-                if (!f) {
-                    return callback(null, docs, pointer);
-                }
-
-                var newdoc = {
-                    type: 'Feature',
-                    properties: f.attributes()
-                };
-                var doc = f.attributes();
-
-                if (!doc[field]) return ++i && immediate(feature);
-
-                newdoc.id = f.id();
-                newdoc.properties['carmen:text'] = doc[field];
-                if (typeof doc.bbox === 'string') {
-                    newdoc.bbox = doc.bbox.split(',').map(parseFloat);
-                } else {
-                    newdoc.bbox = doc.bbox || (srs === '+init=epsg:4326' ? f.extent() : sm.convert(f.extent(), 'WGS84'));
-                }
-
-                var itpFields = ['carmen:addressnumber', 'carmen:lfromhn', 'carmen:ltohn', 'carmen:rfromhn', 'carmen:rtohn', 'carmen:parityr', 'carmen:parityl'];
-                for(var field_i=0;field_i<itpFields.length;field_i++)
-                    if (newdoc.properties[itpFields[field_i]])
-                        newdoc.properties[itpFields[field_i]] = newdoc.properties[itpFields[field_i]].split(',');
-
-                if (typeof doc['carmen:center'] === 'string') {
-                    newdoc.properties['carmen:center'] = doc['carmen:center'].split(',').map(parseFloat);
-                }
-                else {
-                    newdoc.properties['carmen:center'] = [
-                        newdoc.bbox[0] + (newdoc.bbox[2] - newdoc.bbox[0]) * 0.5,
-                        newdoc.bbox[1] + (newdoc.bbox[3] - newdoc.bbox[1]) * 0.5
-                    ];
-                }
-                if (newdoc.bbox[0] === newdoc.bbox[2]) delete newdoc.bbox;
-
-                var geom = f.geometry();
-
-                if (srs == '+init=epsg:4326') {
-                    geom.toJSON(function(err,json_string) {
-                        newdoc.geometry = JSON.parse(json_string);
-                        docs.push(newdoc);
-                        i++;
-                        immediate(feature);
-                    });
-                } else {
-                    var from = new mapnik.Projection(srs);
-                    var to = new mapnik.Projection('+init=epsg:4326');
-                    var tr = new mapnik.ProjTransform(from,to);
-                    geom.toJSON({transform:tr},function(err,json_string) {
-                        newdoc.geometry = JSON.parse(json_string);
-                        docs.push(newdoc);
-                        i++;
-                        immediate(feature);
-                    });
-                }
+        function feature() {
+            if (i === pointer.limit) {
+                return callback(null, docs, pointer);
             }
 
-            feature();
-        });
+            var f = featureset.next();
+
+            if (!f) {
+                return callback(null, docs, pointer);
+            }
+
+            var newdoc = {
+                type: 'Feature',
+                properties: f.attributes()
+            };
+            var doc = f.attributes();
+
+            if (!doc[field]) return ++i && immediate(feature);
+
+            newdoc.id = f.id();
+            newdoc.properties['carmen:text'] = doc[field];
+            if (typeof doc.bbox === 'string') {
+                newdoc.bbox = doc.bbox.split(',').map(parseFloat);
+            } else {
+                newdoc.bbox = doc.bbox || (srs === '+init=epsg:4326' ? f.extent() : sm.convert(f.extent(), 'WGS84'));
+            }
+
+            var itpFields = ['carmen:addressnumber', 'carmen:lfromhn', 'carmen:ltohn', 'carmen:rfromhn', 'carmen:rtohn', 'carmen:parityr', 'carmen:parityl'];
+            for(var field_i=0;field_i<itpFields.length;field_i++)
+                if (newdoc.properties[itpFields[field_i]])
+                    newdoc.properties[itpFields[field_i]] = newdoc.properties[itpFields[field_i]].split(',');
+
+            if (typeof doc['carmen:center'] === 'string') {
+                newdoc.properties['carmen:center'] = doc['carmen:center'].split(',').map(parseFloat);
+            }
+            else {
+                newdoc.properties['carmen:center'] = [
+                    newdoc.bbox[0] + (newdoc.bbox[2] - newdoc.bbox[0]) * 0.5,
+                    newdoc.bbox[1] + (newdoc.bbox[3] - newdoc.bbox[1]) * 0.5
+                ];
+            }
+            if (newdoc.bbox[0] === newdoc.bbox[2]) delete newdoc.bbox;
+
+            var geom = f.geometry();
+
+            if (srs == '+init=epsg:4326') {
+                geom.toJSON(function(err,json_string) {
+                    newdoc.geometry = JSON.parse(json_string);
+                    docs.push(newdoc);
+                    i++;
+                    immediate(feature);
+                });
+            } else {
+                var from = new mapnik.Projection(srs);
+                var to = new mapnik.Projection('+init=epsg:4326');
+                var tr = new mapnik.ProjTransform(from,to);
+                geom.toJSON({transform:tr},function(err,json_string) {
+                    newdoc.geometry = JSON.parse(json_string);
+                    docs.push(newdoc);
+                    i++;
+                    immediate(feature);
+                });
+            }
+        }
+
+        feature();
     });
 };

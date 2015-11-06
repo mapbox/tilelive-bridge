@@ -4,7 +4,14 @@ var fs = require('fs');
 var tape = require('tape');
 var queue = require('queue-async');
 
-var source = new Bridge({ xml: fs.readFileSync(path.resolve(path.join(__dirname,'/raster-a.xml')), 'utf8'), base:path.join(__dirname,'/'), blank:true });
+var source;
+
+tape('setup', function(assert) {
+    new Bridge({ xml: fs.readFileSync(path.resolve(path.join(__dirname,'/raster-a.xml')), 'utf8'), base:path.join(__dirname,'/'), blank:true }, function(err,s) {
+        source = s;
+        assert.end();
+    });
+});
 
 tape('warmup', function(assert) {
     source.getTile(0, 0, 0, assert.end);
@@ -31,10 +38,12 @@ tape('raster bench', function(assert) {
     }
     q.awaitAll(function(err, res) {
         assert.ifError(err);
-        time = +(new Date()) - time;
-        var rate = total/(time/1000);
-        assert.equal(rate > 20, true, 'render ' + total + ' tiles @ ' + rate.toFixed(1) + ' tiles/sec');
-        assert.end();
+        source.close(function() {
+            time = +(new Date()) - time;
+            var rate = total/(time/1000);
+            assert.equal(rate > 20, true, 'render ' + total + ' tiles @ ' + rate.toFixed(1) + ' tiles/sec');
+            assert.end();
+        })
     });
 });
 
