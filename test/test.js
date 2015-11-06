@@ -7,6 +7,8 @@ var tape = require('tape');
 var UPDATE = process.env.UPDATE;
 var deepEqual = require('deep-equal');
 var util = require('util');
+var mapnik_pool = require('mapnik-pool');
+var mapnikPool = mapnik_pool(mapnik);
 
 // Load fixture data.
 var xml = {
@@ -53,10 +55,40 @@ var rasterxml = {
 
 
 (function() {
+    tape('should set protocol as we would like', function(assert) {
+        var fake_tilelive = {
+            protocols: {}
+        };
+        Bridge.registerProtocols(fake_tilelive);
+        assert.equal(fake_tilelive.protocols['bridge:'],Bridge);
+        assert.end();
+    });
     tape('should fail without xml', function(assert) {
         new Bridge({}, function(err) {
             assert.equal(err.message, 'No xml');
             assert.end();
+        });
+    });
+    tape('should fail with invalid xml', function(assert) {
+        new Bridge({xml: 'bogus'}, function(err) {
+            assert.equal(err.message, 'expected < at line 1');
+            assert.end();
+        });
+    });
+    tape('should fail with invalid xml at map.acquire', function(assert) {
+        new Bridge({xml: '<Map></Map>'}, function(err, source) {
+            assert.ifError(err);
+            assert.ok(source);
+            // manually break the map pool to deviously trigger later error
+            // this should never happen in reality but allows us to
+            // cover this error case nevertheless
+            source._map = mapnikPool.fromString('bogus xml');
+            source.getTile(0,0,0, function(err, buffer, headers) {
+                assert.equal(err.message, 'expected < at line 1');
+                source.close(function() {
+                    assert.end();
+                });
+            });
         });
     });
     tape('should load with callback', function(assert) {
