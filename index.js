@@ -38,7 +38,9 @@ function Bridge(uri, callback) {
         uri.query = typeof uri.query === 'string' ? qs.parse(uri.query) : (uri.query || {});
         var filepath = path.resolve(uri.pathname);
         fs.readFile(filepath, 'utf8', function(err, xml) {
-            if (err) return callback(err);
+            if (err) {
+                return callback(err);
+            }
             var opts = Object.keys(uri.query).reduce(function(memo, key) {
                 memo[key] = !!parseInt(uri.query[key], 10);
                 return memo;
@@ -52,7 +54,9 @@ function Bridge(uri, callback) {
     }
 
     function init(uri) {
-        if (!uri.xml) return callback && callback(new Error('No xml'));
+        if (!uri.xml) {
+            return callback && callback(new Error('No xml'));
+        }
 
         source._uri = uri;
         source._base = path.resolve(uri.base || __dirname);
@@ -77,7 +81,9 @@ Bridge.registerProtocols = function(tilelive) {
 // into the constructor because there is no good auto cache-keying system
 // for these tile sources (ie. sharing/caching is best left to the caller).
 Bridge.prototype.open = function(callback) {
-    if (this._map) return callback(null, this);
+    if (this._map) {
+        return callback(null, this);
+    }
     this.once('open', callback);
 };
 
@@ -91,7 +97,9 @@ Bridge.prototype.update = function(opts, callback) {
     this._readonly_map = new mapnik.Map(1,1);
     var mopts = { strict: false, base: this._base + '/' };
     this._readonly_map.fromString(this._xml,mopts,function(err) {
-        if (err) return callback(err);
+        if (err) {
+            return callback(err);
+        }
         this.close(function() {
             this._map = mapnikPool.fromString(this._xml,
                 { size: 256, bufferSize: 256 },
@@ -103,7 +111,9 @@ Bridge.prototype.update = function(opts, callback) {
 };
 
 function poolDrain(pool,callback) {
-    if (!pool) return callback();
+    if (!pool) {
+        return callback();
+    }
     pool.drain(function() {
         pool.destroyAllNow(callback);
     });
@@ -120,7 +130,9 @@ Bridge.prototype.getTile = function(z, x, y, callback) {
 
     var source = this;
     source._map.acquire(function(err, map) {
-        if (err) return callback(err);
+        if (err) {
+            return callback(err);
+        }
 
         // set source _maxzoom cache to prevent repeat calls to map.parameters
         if (source._maxzoom === undefined) {
@@ -157,15 +169,23 @@ Bridge.getRaster = function(source, map, im, z, x, y, callback) {
     im.clear();
     map.render(im, function(err, image) {
         source._map.release(map);
-        if (err) return callback(err);
+        if (err) {
+            return callback(err);
+        }
         image.isSolid(function(err, solid, pixel) {
-            if (err) return callback(err);
+            if (err) {
+                return callback(err);
+            }
 
             // If source is in blank mode any solid tile is empty.
-            if (solid && source._blank) return callback(new Error('Tile does not exist'));
+            if (solid && source._blank) {
+                return callback(new Error('Tile does not exist'));
+            }
 
             var pixel_key = '';
             if (solid) {
+                console.log('here')
+                process.exit();
                 var a = (pixel>>>24) & 0xff;
                 var r = pixel & 0xff;
                 var g = (pixel>>>8) & 0xff;
@@ -174,7 +194,9 @@ Bridge.getRaster = function(source, map, im, z, x, y, callback) {
             }
 
             image.encode('webp', {}, function(err, buffer) {
-                if (err) return callback(err);
+                if (err) {
+                    return callback(err);
+                }
                 buffer.solid = pixel_key;
                 return callback(err, buffer, {'Content-Type':'image/webp'});
             });
@@ -225,19 +247,30 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
 
     map.render(new mapnik.VectorTile(+z,+x,+y), opts, function(err, image) {
         source._map.release(map);
-        if (err) return callback(err);
+        if (err) {
+            return callback(err);
+        }
         image.isSolid(function(err, solid, key) {
-            if (err) return callback(err);
+            if (err) {
+                return callback(err);
+            }
             image.getData({compression:'gzip'},function(err,pbfz) {
-                if (err) return callback(err);
+                if (err) {
+                    return callback(err);
+                }
                 headers['Content-Encoding'] = 'gzip';
 
                 headers['x-tilelive-contains-data'] = image.painted();
+
                 // Solid handling.
-                if (solid === false) return callback(err, pbfz, headers);
+                if (solid === false) {
+                    return callback(err, pbfz, headers);
+                }
 
                 // Empty tiles are equivalent to no tile.
-                if (source._blank || !key) return callback(new Error('Tile does not exist'), null, headers);
+                if (source._blank || !key) {
+                    return callback(new Error('Tile does not exist'), null, headers);
+                }
 
                 pbfz.solid = key;
 
@@ -249,7 +282,9 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
 
 Bridge.prototype.getInfo = function(callback) {
     var map = this._readonly_map;
-    if (!map) return callback(new Error('Tilesource not loaded'));
+    if (!map) {
+        return callback(new Error('Tilesource not loaded'));
+    }
 
     var params = map.parameters;
     var info = Object.keys(params).reduce(function(memo, key) {
@@ -296,7 +331,9 @@ Bridge.prototype.getInfo = function(callback) {
 
 Bridge.prototype.getIndexableDocs = function(pointer, callback) {
     var map = this._readonly_map;
-    if (!map) return callback(new Error('Tilesource not loaded'));
+    if (!map) {
+        return callback(new Error('Tilesource not loaded'));
+    }
 
     pointer = pointer || {};
     pointer.limit = pointer.limit || 10000;
@@ -309,7 +346,9 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
     };
 
     source.getInfo(function(err, info) {
-        if (err) return callback(err);
+        if (err) {
+            return callback(err);
+        }
         var name = (map.parameters.geocoder_layer||'').split('.').shift() || '';
         var field = (map.parameters.geocoder_layer||'').split('.').pop() || 'carmen:text';
         var zoom = info.maxzoom + parseInt(map.parameters.geocoder_resolution||0, 10);
@@ -317,12 +356,22 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
             map.layers().filter(function(l) { return l.name === name })[0] :
             map.layers()[0];
 
-        if (!zoom) return callback(new Error('No geocoding zoom defined'));
-        if (!layer) return callback(new Error('No geocoding layer found'));
-        if (!knownsrs[layer.srs]) return callback(new Error('Unknown layer SRS'));
+        if (!zoom) {
+            return callback(new Error('No geocoding zoom defined'));
+        }
+
+        if (!layer) {
+            return callback(new Error('No geocoding layer found'));
+        }
+
+        if (!knownsrs[layer.srs]) {
+            return callback(new Error('Unknown layer SRS'));
+        }
 
         var srs = knownsrs[layer.srs];
-        if (!pointer.featureset) pointer.featureset = layer.datasource.featureset();
+        if (!pointer.featureset) {
+            pointer.featureset = layer.datasource.featureset();
+        }
         var featureset = pointer.featureset;
         var params = layer.datasource.parameters();
         var docs = [];
@@ -346,7 +395,9 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
             };
             var doc = f.attributes();
 
-            if (!doc[field]) return ++i && immediate(feature);
+            if (!doc[field]) {
+                return ++i && immediate(feature);
+            }
 
             newdoc.id = f.id();
             newdoc.properties['carmen:text'] = doc[field];
@@ -370,7 +421,9 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
                     newdoc.bbox[1] + (newdoc.bbox[3] - newdoc.bbox[1]) * 0.5
                 ];
             }
-            if (newdoc.bbox[0] === newdoc.bbox[2]) delete newdoc.bbox;
+            if (newdoc.bbox[0] === newdoc.bbox[2]) {
+                delete newdoc.bbox;
+            }
 
             var geom = f.geometry();
 
