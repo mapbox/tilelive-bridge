@@ -3,10 +3,15 @@
 ## 2.2.1
 
  - Upgraded to mapnik-pool@0.1.2 (with an upgrade to generic-pool@2.2.1)
+   - A hang was encountered with older `generic-pool` so this may fix hangs seen downstream.
  - Added the usage of a readonly `mapnik.Map` object for readonly operations
-   - Now only `getTile` uses pooled maps
-   - Now an invalid XML will throw at source creation rather than at source usage
- - Now pooling images to reduce allocation overhead
+   - Now only `getTile` uses pooled maps. This simplifies the code and also should allow
+     `getInfo` and `getIndexableDocs` to perform better because they no longer need to
+     pull maps from the pool.
+   - Now an invalid XML will throw at source creation rather than at source usage. This should
+     avoid programming errors downstream.
+ - Now pooling images to reduce allocation overhead. This radically reduces memory needs when
+   rendering raster tiles.
  - Improved tests to avoid potential hangs at exit due to unclosed sources
 
 ## 2.2.0
