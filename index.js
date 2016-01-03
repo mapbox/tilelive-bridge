@@ -265,8 +265,14 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
                     return callback(err, pbfz, headers);
                 }
 
+                // In blank mode solid + painted tiles are treated as empty.
+                if (source._blank) {
+                    headers['x-tilelive-contains-data'] = false;
+                    return callback(new Error('Tile does not exist'), null, headers);
+                }
+
                 // Empty tiles are equivalent to no tile.
-                if (source._blank || !key) {
+                if (!key) {
                     return callback(new Error('Tile does not exist'), null, headers);
                 }
 
