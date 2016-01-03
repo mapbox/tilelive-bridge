@@ -1,5 +1,9 @@
 # Changlog
 
+## 2.2.2
+
+ - Fix for bug where blank mode regressed as a side-effect of new painted handling.
+
 ## 2.2.1
 
  - Upgraded to mapnik-pool@0.1.2 (with an upgrade to generic-pool@2.2.1)
