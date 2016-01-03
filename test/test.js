@@ -248,6 +248,7 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
                     // Test that empty tiles are so.
                     if (obj.empty) {
                         assert.equal(err.message, 'Tile does not exist');
+                        assert.equal(headers['x-tilelive-contains-data'], false);
                         return assert.end();
                     }
 
