@@ -120,8 +120,19 @@ function poolDrain(pool,callback) {
 }
 
 Bridge.prototype.close = function(callback) {
+    // For currently unknown reasons map objects can currently be acquired
+    // without being released under certain circumstances. When this occurs
+    // a source cannot be closed fully during a copy or other operation. For
+    // now error out in these scenarios as a close timeout.
+    setTimeout(function() {
+        callback && callback(new Error('Source resource pool drain timed out after 5s'));
+        callback = false;
+    }, 5000);
     poolDrain(this._map,function() {
-        poolDrain(this._im,callback);
+        poolDrain(this._im,function() {
+            callback && callback();
+            callback = false;
+        });
     }.bind(this));
 };
 
