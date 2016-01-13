@@ -1,5 +1,9 @@
 # Changlog
 
+## 2.2.3
+
+ - Add timeout to `.close()` as a temporary workaround to stubborn non-draining pools.
+
 ## 2.2.2
 
  - Fix for bug where blank mode regressed as a side-effect of new painted handling.
