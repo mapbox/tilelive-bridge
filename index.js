@@ -125,12 +125,15 @@ Bridge.prototype.close = function(callback) {
     // a source cannot be closed fully during a copy or other operation. For
     // now error out in these scenarios as a close timeout.
     setTimeout(function() {
-        callback && callback(new Error('Source resource pool drain timed out after 5s'));
+        if (!callback) return;
+        console.warn(new Error('Source resource pool drain timed out after 5s'));
+        callback();
         callback = false;
     }, 5000);
     poolDrain(this._map,function() {
         poolDrain(this._im,function() {
-            callback && callback();
+            if (!callback) return;
+            callback();
             callback = false;
         });
     }.bind(this));
