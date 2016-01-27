@@ -193,11 +193,11 @@ var rasterxml = {
 })();
 
 function compare_vtiles(assert,filepath,vtile1,vtile2) {
-    assert.equal(vtile1.width(),vtile2.width());
-    assert.equal(vtile1.height(),vtile2.height());
+    assert.equal(vtile1.tileSize,vtile2.tileSize);
+    // assert.equal(vtile1.height(),vtile2.height());
     assert.deepEqual(vtile1.names(),vtile2.names());
     assert.deepEqual(vtile1.names(),vtile2.names());
-    assert.equal(vtile1.isSolid(),vtile2.isSolid());
+    // assert.equal(vtile1.isSolid(),vtile2.isSolid());
     assert.equal(vtile1.empty(),vtile2.empty());
     var v1 = vtile1.toJSON();
     var v2 = vtile2.toJSON();
@@ -268,10 +268,8 @@ function compare_vtiles(assert,filepath,vtile1,vtile2) {
                         var expected = fs.readFileSync(filepath);
                         var vtile1 = new mapnik.VectorTile(+z,+x,+y);
                         var vtile2 = new mapnik.VectorTile(+z,+x,+y);
-                        vtile1.setData(expected);
-                        vtile1.parse();
-                        vtile2.setData(buffer);
-                        vtile2.parse();
+                        vtile1.setDataSync(expected);
+                        vtile2.setDataSync(buffer);
                         compare_vtiles(assert,filepath,vtile1,vtile2);
                         assert.equal(expected.length, buffer.length);
                         assert.deepEqual(expected, buffer);

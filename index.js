@@ -262,39 +262,39 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
         if (err) {
             return callback(err);
         }
-        image.isSolid(function(err, solid, key) {
+        // image.isSolid(function(err, solid, key) {
+        //     if (err) {
+        //         return callback(err);
+        //     }
+        image.getData({compression:'gzip'},function(err,pbfz) {
             if (err) {
                 return callback(err);
             }
-            image.getData({compression:'gzip'},function(err,pbfz) {
-                if (err) {
-                    return callback(err);
-                }
-                headers['Content-Encoding'] = 'gzip';
+            headers['Content-Encoding'] = 'gzip';
+            
+            headers['x-tilelive-contains-data'] = image.painted();
 
-                headers['x-tilelive-contains-data'] = image.painted();
+            // Solid handling.
+            // if (solid === false) {
+            //     return callback(err, pbfz, headers);
+            // }
 
-                // Solid handling.
-                if (solid === false) {
-                    return callback(err, pbfz, headers);
-                }
+            // In blank mode solid + painted tiles are treated as empty.
+            if (source._blank) {
+                headers['x-tilelive-contains-data'] = false;
+                return callback(new Error('Tile does not exist'), null, headers);
+            }
 
-                // In blank mode solid + painted tiles are treated as empty.
-                if (source._blank) {
-                    headers['x-tilelive-contains-data'] = false;
-                    return callback(new Error('Tile does not exist'), null, headers);
-                }
+            // Empty tiles are equivalent to no tile.
+            if (!key) {
+                return callback(new Error('Tile does not exist'), null, headers);
+            }
 
-                // Empty tiles are equivalent to no tile.
-                if (!key) {
-                    return callback(new Error('Tile does not exist'), null, headers);
-                }
+            pbfz.solid = key;
 
-                pbfz.solid = key;
-
-                return callback(err, pbfz, headers);
-            });
+            return callback(err, pbfz, headers);
         });
+        // });
     });
 };
 
