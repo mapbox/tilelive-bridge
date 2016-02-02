@@ -222,8 +222,13 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
     var headers = {};
     headers['Content-Type'] = 'application/x-protobuf';
 
-    map.resize(256, 256);
-    map.extent = sm.bbox(+x,+y,+z, false, '900913');
+
+    // The buffer size is in vector tile coordinates, while the buffer size on the
+    // map object is in image coordinates. Therefore, lets multiply the buffer_size 
+    // by the old "path_multiplier" value of 16 to get a proper buffer size.
+    var vtile = new mapnik.VectorTile(+z,+x,+y, {buffer_size:16*map.bufferSize});
+    
+    map.extent = vtile.extent();
 
     /*
         Simplification works to generalize geometries before encoding into vector tiles.
@@ -247,34 +252,22 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
         having negligible visual impact even if the tile is overzoomed (but this warrants more testing).
     */
     opts.simplify_distance = z < source._maxzoom ? 4 : 1;
-    // This is the default path_multiplier - it is not recommended to change this
-    opts.path_multiplier = 16;
-
-    // also pass buffer_size in options to be forward compatible with recent node-mapnik
-    // https://github.com/mapnik/node-mapnik/issues/175
-    opts.buffer_size = map.bufferSize;
 
     // enable strictly_simple
     opts.strictly_simple = true;
 
-    map.render(new mapnik.VectorTile(+z,+x,+y), opts, function(err, image) {
+    map.render(vtile, opts, function(err, vtile) {
         source._map.release(map);
         if (err) {
             return callback(err);
         }
-        image.getData({compression:'gzip'},function(err,pbfz) {
-            if (err) {
-                return callback(err);
-            }
+        headers['x-tilelive-contains-data'] = vtile.painted();
+        if (vtile.empty()) {
+            return callback(new Error('Tile does not exist'), null, headers);
+        }
+        vtile.getData({compression:'gzip'}, function(err, pbfz) {
+            if (err) return callback(err);
             headers['Content-Encoding'] = 'gzip';
-            
-            headers['x-tilelive-contains-data'] = image.painted();
-
-            if (image.empty()) {
-                headers['x-tilelive-contains-data'] = false;
-                return callback(new Error('Tile does not exist'), null, headers);
-            }
-
             return callback(err, pbfz, headers);
         });
     });
