@@ -163,6 +163,17 @@ Bridge.prototype.getTile = function(z, x, y, callback) {
             }
         }
 
+        if (source._threading_mode === undefined) {
+            var threading_type = map.parameters.threading_mode;
+            if (threading_type === 'auto') {
+                source._threading_mode = mapnik.threadingMode.auto;
+            } else if (threading_type === 'async') {
+                source._threading_mode = mapnik.threadingMode.async;
+            } else {
+                source._threading_mode = mapnik.threadingMode.deferred;
+            }
+        }
+
         if (source._type === 'raster') {
             source._im.acquire(function(err, im) {
                 Bridge.getRaster(source, map, im, z, x, y, function(err,buffer,headers) {
@@ -252,6 +263,8 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
         having negligible visual impact even if the tile is overzoomed (but this warrants more testing).
     */
     opts.simplify_distance = z < source._maxzoom ? 4 : 1;
+
+    opts.threading_mode = source._threading_mode;
 
     // enable strictly_simple
     opts.strictly_simple = true;
