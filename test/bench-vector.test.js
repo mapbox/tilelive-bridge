@@ -108,7 +108,7 @@ tape('vector bench auto', function(assert) {
             assert.equal(rate_auto > 50, true, 'render ' + total + ' tiles @ ' + rate_auto.toFixed(1) + ' tiles/sec');
             assert.equal(total, 341);
             assert.equal(empty, 73);
-            assert.equal(rate_auto > rate_deferred, true);
+            assert.equal(rate_auto + 20 > rate_deferred, true); // should be at least roughly the same speed or faster
             assert.end();
         })
     });
@@ -161,7 +161,7 @@ tape('vector bench async', function(assert) {
             assert.equal(rate_async > 50, true, 'render ' + total + ' tiles @ ' + rate_async.toFixed(1) + ' tiles/sec');
             assert.equal(total, 341);
             assert.equal(empty, 73);
-            assert.equal(rate_async > rate_deferred, true);
+            assert.equal(rate_async + 20 > rate_deferred, true); // should be at least roughly the same speed or faster
             assert.end();
         })
     });
