@@ -61,6 +61,11 @@ tape('vector bench deferred', function(assert) {
     });
 });
 
+// Currently there is a bug in std::future in xcode that will be fixed in 7.3 release
+// until that point the binaries built in OSX could possibly cause memory corruption 
+// when using non deferred processing (like a terrorist) when that is fixed this can be removed.
+if (process.platform != 'darwin') {
+
 tape('setup auto', function(assert) {
     new Bridge({ xml: fs.readFileSync(path.resolve(path.join(__dirname,'/bench-test-auto.xml')), 'utf8'), base:path.join(__dirname,'/'), blank:false }, function(err,s) {
         source = s;
@@ -166,3 +171,5 @@ tape('vector bench async', function(assert) {
         })
     });
 });
+
+}
