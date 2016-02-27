@@ -163,6 +163,17 @@ Bridge.prototype.getTile = function(z, x, y, callback) {
             }
         }
 
+        if (source._threading_mode === undefined) {
+            var threading_type = map.parameters.threading_mode;
+            if (threading_type === 'auto') {
+                source._threading_mode = mapnik.threadingMode.auto;
+            } else if (threading_type === 'async') {
+                source._threading_mode = mapnik.threadingMode.async;
+            } else {
+                source._threading_mode = mapnik.threadingMode.deferred;
+            }
+        }
+
         if (source._type === 'raster') {
             source._im.acquire(function(err, im) {
                 Bridge.getRaster(source, map, im, z, x, y, function(err,buffer,headers) {
@@ -222,8 +233,13 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
     var headers = {};
     headers['Content-Type'] = 'application/x-protobuf';
 
-    map.resize(256, 256);
-    map.extent = sm.bbox(+x,+y,+z, false, '900913');
+
+    // The buffer size is in vector tile coordinates, while the buffer size on the
+    // map object is in image coordinates. Therefore, lets multiply the buffer_size 
+    // by the old "path_multiplier" value of 16 to get a proper buffer size.
+    var vtile = new mapnik.VectorTile(+z,+x,+y, {buffer_size:16*map.bufferSize});
+    
+    map.extent = vtile.extent();
 
     /*
         Simplification works to generalize geometries before encoding into vector tiles.
@@ -247,53 +263,28 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
         having negligible visual impact even if the tile is overzoomed (but this warrants more testing).
     */
     opts.simplify_distance = z < source._maxzoom ? 4 : 1;
-    // This is the default path_multiplier - it is not recommended to change this
-    opts.path_multiplier = 16;
 
-    // also pass buffer_size in options to be forward compatible with recent node-mapnik
-    // https://github.com/mapnik/node-mapnik/issues/175
-    opts.buffer_size = map.bufferSize;
+    opts.threading_mode = source._threading_mode;
 
     // enable strictly_simple
     opts.strictly_simple = true;
 
-    map.render(new mapnik.VectorTile(+z,+x,+y), opts, function(err, image) {
+    // make zoom_level variable available to mapnik postgis datasource
+    opts.variables = { "zoom_level": z };
+
+    map.render(vtile, opts, function(err, vtile) {
         source._map.release(map);
         if (err) {
             return callback(err);
         }
-        image.isSolid(function(err, solid, key) {
-            if (err) {
-                return callback(err);
-            }
-            image.getData({compression:'gzip'},function(err,pbfz) {
-                if (err) {
-                    return callback(err);
-                }
-                headers['Content-Encoding'] = 'gzip';
-
-                headers['x-tilelive-contains-data'] = image.painted();
-
-                // Solid handling.
-                if (solid === false) {
-                    return callback(err, pbfz, headers);
-                }
-
-                // In blank mode solid + painted tiles are treated as empty.
-                if (source._blank) {
-                    headers['x-tilelive-contains-data'] = false;
-                    return callback(new Error('Tile does not exist'), null, headers);
-                }
-
-                // Empty tiles are equivalent to no tile.
-                if (!key) {
-                    return callback(new Error('Tile does not exist'), null, headers);
-                }
-
-                pbfz.solid = key;
-
-                return callback(err, pbfz, headers);
-            });
+        headers['x-tilelive-contains-data'] = vtile.painted();
+        if (vtile.empty()) {
+            return callback(new Error('Tile does not exist'), null, headers);
+        }
+        vtile.getData({compression:'gzip'}, function(err, pbfz) {
+            if (err) return callback(err);
+            headers['Content-Encoding'] = 'gzip';
+            return callback(err, pbfz, headers);
         });
     });
 };
