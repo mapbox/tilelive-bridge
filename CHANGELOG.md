@@ -1,5 +1,9 @@
 # Changlog
 
+## 2.3.0
+
+ - Update mapnik to `3.5.0`, with vector-tile v2 spec implementation
+
 ## 2.2.3
 
  - Add timeout to `.close()` as a temporary workaround to stubborn non-draining pools.
