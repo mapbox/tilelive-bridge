@@ -58,6 +58,8 @@ function Bridge(uri, callback) {
             return callback && callback(new Error('No xml'));
         }
 
+        if (uri.throwOnInvalid) source._throw = uri.throwOnInvalid;
+
         source._uri = uri;
         source._base = path.resolve(uri.base || __dirname);
 
@@ -65,7 +67,6 @@ function Bridge(uri, callback) {
         source._blank = typeof uri.blank === 'boolean' ? uri.blank : false;
 
         if (callback) source.once('open', callback);
-
         source.update(uri, function(err) {
             source.emit('open', err, source);
         });
@@ -277,16 +278,62 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
         if (err) {
             return callback(err);
         }
+
+        // check geometry validtiy, throw error if invalid
+        if (source._throw) {
+            vtile.reportGeometryValidity(function(err, valid) {
+                if (err) return callback(err);
+                if (valid.length) {
+                  var validFailures = parseValidityFailures(valid);
+                  return callback(null, validFailures);
+                }
+                else return callback();
+            });
+        }
+
         headers['x-tilelive-contains-data'] = vtile.painted();
         if (vtile.empty()) {
             return callback(new Error('Tile does not exist'), null, headers);
         }
+
         vtile.getData({compression:'gzip'}, function(err, pbfz) {
             if (err) return callback(err);
             headers['Content-Encoding'] = 'gzip';
             return callback(err, pbfz, headers);
         });
     });
+};
+
+function parseValidityFailures(failures) {
+  var failCodes = failures.reduce(function(a, b) {
+    var failCode = invalidStrings[b.message.split('.')[0]] || 'ERR UNEXPECTED REASON';
+    if (failCode === 'self_intersections') {
+      var matchCode = /method\:\s([a-z\-\?\!])/.exec(b.message);
+      if (matchCode.length) failCode += '_method_' + matchCode[1];
+    }
+
+    if (!a[b.layer]) a[b.layer] = {};
+    if (!a[b.layer][b.featureId]) a[b.layer][b.featureId] = {'validity_failures': {}};
+    if (!a[b.layer][b.featureId][failCode]) a[b.layer][b.featureId]['validity_failures'][failCode] = 1;
+    else a[b.layer][b.featureId]['validity_failures'][failCode]++;
+    return a;
+  }, {});
+  return failCodes;
+}
+var invalidStrings = {
+  'Geometry is valid' : 'no_failure',
+  'Geometry has too few points' : 'few_points',
+  'Geometry has wrong topological dimension' : 'wrong_topological_dimension',
+  'Geometry is defined as closed but is open' : 'not_closed',
+  'Geometry has spikes' : 'spikes',
+  'Geometry has invalid self-intersections' : 'self_intersections',
+  'Geometry has wrong orientation' : 'wrong_orientation',
+  'Geometry has interior rings defined outside the outer boundary' : 'interior_rings_outside',
+  'Geometry has nested interior rings' : 'nested_interior_rings',
+  'Geometry has disconnected interior' : 'disconnected_interior',
+  'Multi-polygon has intersecting interiors' : 'intersecting_interiors',
+  'Geometry has duplicate (consecutive) points' : 'duplicate_points',
+  'Box has corners in wrong order' : 'wrong_corner_order'
 };
 
 Bridge.prototype.getInfo = function(callback) {
