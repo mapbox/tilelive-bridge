@@ -61,7 +61,7 @@ tape('vector bench deferred', function(assert) {
     });
 });
 
-tape.only('throw on invalid geometry', function(assert) {
+tape.skip('throw on invalid geometry', function(assert) {
     new Bridge({ xml: fs.readFileSync(path.resolve(path.join(__dirname,'/tile-boundary-test.xml')), 'utf8'), base:path.join(__dirname,'/'), throwOnInvalid: true }, function(err, s) {
         // should return on invalid tile using reportGeometryValidity()
         s.getTile(15, 19470, 17537, function(err, data) {
