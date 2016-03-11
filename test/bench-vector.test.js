@@ -61,17 +61,6 @@ tape('vector bench deferred', function(assert) {
     });
 });
 
-tape.only('throw on invalid geometry', function(assert) {
-    new Bridge({ xml: fs.readFileSync(path.resolve(path.join(__dirname,'/tile-boundary-test.xml')), 'utf8'), base:path.join(__dirname,'/'), throwOnInvalid: true }, function(err, s) {
-        // should return on invalid tile using reportGeometryValidity()
-        s.getTile(15, 19470, 17537, function(err, data) {
-            // if (err) throw err;
-            console.log('err', err);
-            console.log('data', data);
-        });
-        assert.end();
-    });
-});
 
 // Currently there is a bug in std::future in xcode that will be fixed in 7.3 release
 // until that point the binaries built in OSX could possibly cause memory corruption 

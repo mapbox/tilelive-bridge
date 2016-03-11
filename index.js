@@ -281,14 +281,8 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
 
         // check geometry validtiy, throw error if invalid
         if (source._throw) {
-            vtile.reportGeometryValidity(function(err, valid) {
-                if (err) return callback(err);
-                if (valid.length) {
-                  var validFailures = parseValidityFailures(valid);
-                  return callback(null, validFailures);
-                }
-                else return callback();
-            });
+            var valid = vtile.reportGeometryValidity();
+            return callback(valid);
         }
 
         headers['x-tilelive-contains-data'] = vtile.painted();

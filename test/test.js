@@ -91,6 +91,21 @@ var rasterxml = {
             });
         });
     });
+    tape('should fail if invalid geometry is created', function(assert) {
+        new Bridge({ xml: fs.readFileSync(path.resolve(path.join(__dirname,'/tile-boundary-test.xml')), 'utf8'), base:path.join(__dirname,'/'), throwOnInvalid: true }, function(err, s) {
+            assert.ifError(err);
+            assert.ok(s);
+            // should return on invalid tile using reportGeometryValidity()
+            s.getTile(15,19469,17477, function(errs, buffer, headers) {
+                var err = errs[0];
+                assert.equal(err.message, 'Geometry has invalid self-intersections. A self-intersection point was found at (3.77355e+06, -1.33671e+06); method: m; operations: u/x; segment IDs {source, multi, ring, segment}: {0, 0, -1, 1}/{0, 0, -1, 151}');
+                assert.equal(err.featureId, 1);
+                s.close(function() {
+                    assert.end();
+                });
+            });
+        });
+    });
     tape('should load with callback', function(assert) {
         new Bridge({ xml: xml.a, base:path.join(__dirname,'/') }, function(err, source) {
             assert.ifError(err);
