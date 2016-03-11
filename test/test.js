@@ -99,6 +99,8 @@ var rasterxml = {
             s.getTile(15,19469,17477, function(errs, buffer, headers) {
                 var err = errs[0];
                 assert.equal(err.message, 'Geometry has invalid self-intersections. A self-intersection point was found at (3.77355e+06, -1.33671e+06); method: m; operations: u/x; segment IDs {source, multi, ring, segment}: {0, 0, -1, 1}/{0, 0, -1, 151}');
+                assert.equal(err.layer, 'contour');
+                assert.ok(err.sourceGeometry);
                 assert.equal(err.featureId, 1);
                 s.close(function() {
                     assert.end();

@@ -281,8 +281,20 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
 
         // check geometry validtiy, throw error if invalid
         if (source._throw) {
-            var valid = vtile.reportGeometryValidity();
-            return callback(valid);
+            var errors = vtile.reportGeometryValidity();
+            var errorsWithLayers = errors.map(function(validityErr) {
+                var errLayer = validityErr.layer;
+                var layer = map.layers().filter(function(l) { return l.name === errLayer; })[0];
+                var featureset = layer.datasource.featureset()
+                var found = null;
+                while (found === null) {
+                    var f = featureset.next();
+                    if (f.id() === validityErr.featureId) found = f.geometry().toJSON();
+                }
+                validityErr.sourceGeometry = found;
+                return validityErr;
+            });
+            return callback(errorsWithLayers);
         }
 
         headers['x-tilelive-contains-data'] = vtile.painted();
@@ -296,38 +308,6 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
             return callback(err, pbfz, headers);
         });
     });
-};
-
-function parseValidityFailures(failures) {
-  var failCodes = failures.reduce(function(a, b) {
-    var failCode = invalidStrings[b.message.split('.')[0]] || 'ERR UNEXPECTED REASON';
-    if (failCode === 'self_intersections') {
-      var matchCode = /method\:\s([a-z\-\?\!])/.exec(b.message);
-      if (matchCode.length) failCode += '_method_' + matchCode[1];
-    }
-
-    if (!a[b.layer]) a[b.layer] = {};
-    if (!a[b.layer][b.featureId]) a[b.layer][b.featureId] = {'validity_failures': {}};
-    if (!a[b.layer][b.featureId][failCode]) a[b.layer][b.featureId]['validity_failures'][failCode] = 1;
-    else a[b.layer][b.featureId]['validity_failures'][failCode]++;
-    return a;
-  }, {});
-  return failCodes;
-}
-var invalidStrings = {
-  'Geometry is valid' : 'no_failure',
-  'Geometry has too few points' : 'few_points',
-  'Geometry has wrong topological dimension' : 'wrong_topological_dimension',
-  'Geometry is defined as closed but is open' : 'not_closed',
-  'Geometry has spikes' : 'spikes',
-  'Geometry has invalid self-intersections' : 'self_intersections',
-  'Geometry has wrong orientation' : 'wrong_orientation',
-  'Geometry has interior rings defined outside the outer boundary' : 'interior_rings_outside',
-  'Geometry has nested interior rings' : 'nested_interior_rings',
-  'Geometry has disconnected interior' : 'disconnected_interior',
-  'Multi-polygon has intersecting interiors' : 'intersecting_interiors',
-  'Geometry has duplicate (consecutive) points' : 'duplicate_points',
-  'Box has corners in wrong order' : 'wrong_corner_order'
 };
 
 Bridge.prototype.getInfo = function(callback) {
