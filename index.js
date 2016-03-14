@@ -281,34 +281,20 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
 
         // check geometry validtiy, throw error if invalid
         if (source._throw) {
-            var errors = vtile.reportGeometryValidity({split_multi_features:true});
+            var errors = vtile.reportGeometryValidity({lat_lon:true, split_multi_features:true});
             if (errors.length !== 0) {
                 var errorsWithLayers = errors.map(function(validityErr) {
                     var errLayer = validityErr.layer;
                     validityErr.tile = [z,x,y];
-
-                    // check validity message for parentheses
-                    // TOOD make this less awful :)
-                    var coords = validityErr.message.match(/\([^\)]+\)/g)[0];
-                    if (coords.length) {
-                        coords = coords.replace('(', '').replace(')', '').replace('+', '');
-                        var merc = [ parseFloat(coords.substr(0, coords.indexOf(','))), parseFloat(coords.substr(coords.indexOf(', ')+2)) ];
-                        var ll = sm.convert(merc);
-
-                        var errorPoint = {
-                            "type": "Feature",
-                            "geometry": {
-                                "type": "Point",
-                                "coordinates": [ll[0], ll[1]]
-                            }
-                        };
-                        fs.writeSync(z + '_' + x + '_' + y + '.error_point.geojson', new Buffer(errorPoint));
-                        validityErr.errorPoint = errorPoint;
-                    }
-
+                    validityErr.geojson = JSON.parse(validityErr.geojson);
+                    var errPoint = /\((.*), (.*)\)/.exec(validityErr.message);
+                    var errLat = errPoint[1];
+                    var errLon = errPoint[2];
+                    validityErr.geojson.features.push({type:'Feature',properties:{},geometry:{type:'Point',coordinates:[errLat,errLon]}});
+                    validityErr.bounds = vtile.bufferedExtent();
                     return validityErr;
                 });
-                fs.writeSync(z + '_' + x + '_' + y + '.mvt', vtile.getData());
+                fs.writeFileSync(z + '_' + x + '_' + y + '.mvt', vtile.getData());
                 return callback(new Error(JSON.stringify(errorsWithLayers)));
             }
         }
