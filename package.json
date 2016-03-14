@@ -13,7 +13,7 @@
     }
   ],
   "dependencies": {
-    "mapnik": "git://github.com/mapnik/node-mapnik.git#fb88184e45cefb0ba0ec55704649befd3d5fe27a",
+    "mapnik": "git://github.com/mapnik/node-mapnik.git#d255c9b42e372b47fbe4b0e1ba4f448dda259229",
     "sphericalmercator": "1.0.x",
     "mapnik-pool": "~0.1.3"
   },
