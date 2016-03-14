@@ -286,6 +286,26 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
                 var errorsWithLayers = errors.map(function(validityErr) {
                     var errLayer = validityErr.layer;
                     validityErr.tile = [z,x,y];
+
+                    // check validity message for parentheses
+                    // TOOD make this less awful :)
+                    var coords = validityErr.message.match(/\([^\)]+\)/g)[0];
+                    if (coords.length) {
+                        coords = coords.replace('(', '').replace(')', '').replace('+', '');
+                        var merc = [ parseFloat(coords.substr(0, coords.indexOf(','))), parseFloat(coords.substr(coords.indexOf(', ')+2)) ];
+                        var ll = sm.convert(merc);
+
+                        var errorPoint = {
+                            "type": "Feature",
+                            "geometry": {
+                                "type": "Point",
+                                "coordinates": [ll[0], ll[1]]
+                            }
+                        };
+                        fs.writeSync(z + '_' + x + '_' + y + '.error_point.geojson', new Buffer(errorPoint));
+                        validityErr.errorPoint = errorPoint;
+                    }
+
                     return validityErr;
                 });
                 fs.writeSync(z + '_' + x + '_' + y + '.mvt', vtile.getData());
