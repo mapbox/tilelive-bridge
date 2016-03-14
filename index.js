@@ -289,12 +289,13 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
                 var found = null;
                 while (found === null) {
                     var f = featureset.next();
-                    if (f && f.id() === validityErr.featureId) found = f.geometry().toJSON();
+                    if (!f) break;
+                    if (f.id() === validityErr.featureId) found = f.geometry().toJSON();
                 }
                 validityErr.sourceGeometry = found;
                 return validityErr;
             });
-            return callback(errorsWithLayers);
+            return callback(new Error(JSON.stringify(errorsWithLayers)));
         }
 
         headers['x-tilelive-contains-data'] = vtile.painted();
