@@ -281,21 +281,16 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
 
         // check geometry validtiy, throw error if invalid
         if (source._throw) {
-            var errors = vtile.reportGeometryValidity();
-            var errorsWithLayers = errors.map(function(validityErr) {
-                var errLayer = validityErr.layer;
-                var layer = map.layers().filter(function(l) { return l.name === errLayer; })[0];
-                var featureset = layer.datasource.featureset()
-                var found = null;
-                while (found === null) {
-                    var f = featureset.next();
-                    if (!f) break;
-                    if (f.id() === validityErr.featureId) found = f.geometry().toJSON();
-                }
-                validityErr.sourceGeometry = found;
-                return validityErr;
-            });
-            return callback(new Error(JSON.stringify(errorsWithLayers)));
+            var errors = vtile.reportGeometryValidity({split_multi_features:true});
+            if (errors.length !== 0) {
+                var errorsWithLayers = errors.map(function(validityErr) {
+                    var errLayer = validityErr.layer;
+                    validityErr.tile = [z,x,y];
+                    return validityErr;
+                });
+                fs.writeSync(z + '_' + x + '_' + y + '.mvt', vtile.getData());
+                return callback(new Error(JSON.stringify(errorsWithLayers)));
+            }
         }
 
         headers['x-tilelive-contains-data'] = vtile.painted();

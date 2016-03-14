@@ -96,12 +96,8 @@ var rasterxml = {
             assert.ifError(err);
             assert.ok(s);
             // should return on invalid tile using reportGeometryValidity()
-            s.getTile(15,19469,17477, function(errs, buffer, headers) {
-                var err = errs[0];
-                assert.equal(err.message, 'Geometry has invalid self-intersections. A self-intersection point was found at (3.77355e+06, -1.33671e+06); method: m; operations: u/x; segment IDs {source, multi, ring, segment}: {0, 0, -1, 1}/{0, 0, -1, 151}');
-                assert.equal(err.layer, 'contour');
-                assert.ok(err.sourceGeometry);
-                assert.equal(err.featureId, 1);
+            s.getTile(15,19469,17477, function(err, buffer, headers) {
+                assert.equal(err.message, '[{"layer":"contour","message":"Geometry has invalid self-intersections. A self-intersection point was found at (3.77355e+06, -1.33671e+06); method: m; operations: u/x; segment IDs {source, multi, ring, segment}: {0, -1, -1, 1}/{0, -1, -1, 151}","featureId":1,"tile":[15,19469,17477]}]');
                 s.close(function() {
                     assert.end();
                 });
