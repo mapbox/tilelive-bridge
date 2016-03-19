@@ -281,15 +281,18 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
 
         // check geometry validtiy, throw error if invalid
         if (source._throw) {
-            var errors = vtile.reportGeometryValidity({lat_lon:true, split_multi_features:true});
+            var errors = vtile.reportGeometryValidity({lat_lon:false, split_multi_features:true});
             if (errors.length !== 0) {
                 var errorsWithLayers = errors.map(function(validityErr) {
                     var errLayer = validityErr.layer;
                     validityErr.tile = [z,x,y];
                     validityErr.geojson = JSON.parse(validityErr.geojson);
                     var errPoint = /\((.*), (.*)\)/.exec(validityErr.message);
-                    var errLat = errPoint[1];
-                    var errLon = errPoint[2];
+                    var errLat, errLon;
+                    if (errPoint) {
+                        errLat = errPoint[1];
+                        errLon = errPoint[2];
+                    }
                     validityErr.geojson.features.push({type:'Feature',properties:{},geometry:{type:'Point',coordinates:[errLat,errLon]}});
                     validityErr.bounds = vtile.bufferedExtent();
                     return validityErr;
