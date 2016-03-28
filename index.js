@@ -237,7 +237,13 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
     // The buffer size is in vector tile coordinates, while the buffer size on the
     // map object is in image coordinates. Therefore, lets multiply the buffer_size 
     // by the old "path_multiplier" value of 16 to get a proper buffer size.
-    var vtile = new mapnik.VectorTile(+z,+x,+y, {buffer_size:16*map.bufferSize});
+    try {
+        // Try-catch is necessary here because the constructor will throw if x and y
+        // are out of bounds at zoom-level z
+        var vtile = new mapnik.VectorTile(+z,+x,+y, {buffer_size:16*map.bufferSize});
+    } catch(err) {
+        return callback(err, null, headers);
+    }
     
     map.extent = vtile.extent();
 
