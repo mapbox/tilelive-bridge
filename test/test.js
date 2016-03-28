@@ -97,9 +97,7 @@ var rasterxml = {
             assert.ok(source);
             source.getTile(0,0,1, function(err, buffer, headers) {
                 assert.equal(err.message, 'required parameter y is out of range of possible values based on z value');
-                source.close(function() {
-                    assert.end();
-                });
+                assert.end();
             });
         });
     });
