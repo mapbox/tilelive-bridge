@@ -91,6 +91,16 @@ var rasterxml = {
             });
         });
     });
+    tape('should fail with out of bounds x or y', function(assert) {
+        new Bridge({ xml:xml.a, base:path.join(__dirname,'/') }, function(err, source) {
+            assert.ifError(err);
+            assert.ok(source);
+            source.getTile(0,0,1, function(err, buffer, headers) {
+                assert.equal(err.message, 'required parameter y is out of range of possible values based on z value');
+                assert.end();
+            });
+        });
+    });
     tape('should load with callback', function(assert) {
         new Bridge({ xml: xml.a, base:path.join(__dirname,'/') }, function(err, source) {
             assert.ifError(err);
