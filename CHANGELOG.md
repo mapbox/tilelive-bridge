@@ -1,5 +1,9 @@
 # Changlog
 
+## 2.3.1
+
+ - Add try/catch around mapnik.VectorTile constructor to prevent invalid parameters from causing a throw
+
 ## 2.3.0
 
  - Update mapnik to `3.5.0`, with vector-tile v2 spec implementation
