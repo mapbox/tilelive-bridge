@@ -1,5 +1,9 @@
 language: node_js
 
+os:
+  - osx
+  - linux
+
 node_js:
   - "0.10"
   - "4.2.3"
@@ -14,4 +18,4 @@ addons:
 sudo: false
 
 after_success:
- - if [[ ${TRAVIS_NODE_VERSION} == "0.10" ]]; then npm run coverage; fi;
+ - if [[ $(uname -s) == 'Linux' ]] && [[ ${TRAVIS_NODE_VERSION} == "0.10" ]]; then npm run coverage; fi;
