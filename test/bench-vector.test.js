@@ -53,7 +53,12 @@ tape('vector bench deferred', function(assert) {
         source.close(function() {
             time = +(new Date()) - time;
             rate_deferred = total/(time/1000);
-            assert.equal(rate_deferred > 20, true, 'render ' + total + ' tiles @ ' + rate_deferred.toFixed(1) + ' tiles/sec');
+            // only assert on rate for release builds
+            if (process.env.NPM_FLAGS.indexOf('--debug') > -1) {
+                console.log("Skipping rate assertion, since we are running in debug mode");
+            } else {
+                assert.equal(rate_deferred > 20, true, 'render ' + total + ' tiles @ ' + rate_deferred.toFixed(1) + ' tiles/sec');
+            }
             assert.equal(total, 341);
             assert.equal(empty, 73);
             assert.end();
@@ -110,10 +115,16 @@ tape('vector bench auto', function(assert) {
         source.close(function() {
             time = +(new Date()) - time;
             rate_auto = total/(time/1000);
-            assert.equal(rate_auto > 50, true, 'render ' + total + ' tiles @ ' + rate_auto.toFixed(1) + ' tiles/sec');
+            // only assert on rate for release builds
+            if (process.env.NPM_FLAGS.indexOf('--debug') > -1) {
+                console.log("Skipping rate assertion, since we are running in debug mode");
+            } else {
+               assert.equal(rate_auto > 50, true, 'render ' + total + ' tiles @ ' + rate_auto.toFixed(1) + ' tiles/sec');
+               assert.equal(rate_auto + 20 > rate_deferred, true); // should be at least roughly the same speed or faster
+            }
+
             assert.equal(total, 341);
             assert.equal(empty, 73);
-            assert.equal(rate_auto + 20 > rate_deferred, true); // should be at least roughly the same speed or faster
             assert.end();
         })
     });
@@ -163,10 +174,16 @@ tape('vector bench async', function(assert) {
         source.close(function() {
             time = +(new Date()) - time;
             rate_async = total/(time/1000);
-            assert.equal(rate_async > 50, true, 'render ' + total + ' tiles @ ' + rate_async.toFixed(1) + ' tiles/sec');
+            // only assert on rate for release builds
+            if (process.env.NPM_FLAGS.indexOf('--debug') > -1) {
+                console.log("Skipping rate assertion, since we are running in debug mode");
+            } else {
+                assert.equal(rate_async > 50, true, 'render ' + total + ' tiles @ ' + rate_async.toFixed(1) + ' tiles/sec');
+                assert.equal(rate_async + 20 > rate_deferred, true); // should be at least roughly the same speed or faster
+            }
+
             assert.equal(total, 341);
             assert.equal(empty, 73);
-            assert.equal(rate_async + 20 > rate_deferred, true); // should be at least roughly the same speed or faster
             assert.end();
         })
     });
