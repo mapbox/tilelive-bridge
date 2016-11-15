@@ -54,7 +54,7 @@ tape('vector bench deferred', function(assert) {
             time = +(new Date()) - time;
             rate_deferred = total/(time/1000);
             // only assert on rate for release builds
-            if (process.env.NPM_FLAGS.indexOf('--debug') > -1) {
+            if (process.env.NPM_FLAGS && process.env.NPM_FLAGS.indexOf('--debug') > -1) {
                 console.log("Skipping rate assertion, since we are running in debug mode");
             } else {
                 assert.equal(rate_deferred > 20, true, 'render ' + total + ' tiles @ ' + rate_deferred.toFixed(1) + ' tiles/sec');
@@ -116,7 +116,7 @@ tape('vector bench auto', function(assert) {
             time = +(new Date()) - time;
             rate_auto = total/(time/1000);
             // only assert on rate for release builds
-            if (process.env.NPM_FLAGS.indexOf('--debug') > -1) {
+            if (process.env.NPM_FLAGS && process.env.NPM_FLAGS.indexOf('--debug') > -1) {
                 console.log("Skipping rate assertion, since we are running in debug mode");
             } else {
                assert.equal(rate_auto > 50, true, 'render ' + total + ' tiles @ ' + rate_auto.toFixed(1) + ' tiles/sec');
@@ -175,7 +175,7 @@ tape('vector bench async', function(assert) {
             time = +(new Date()) - time;
             rate_async = total/(time/1000);
             // only assert on rate for release builds
-            if (process.env.NPM_FLAGS.indexOf('--debug') > -1) {
+            if (process.env.NPM_FLAGS && process.env.NPM_FLAGS.indexOf('--debug') > -1) {
                 console.log("Skipping rate assertion, since we are running in debug mode");
             } else {
                 assert.equal(rate_async > 50, true, 'render ' + total + ' tiles @ ' + rate_async.toFixed(1) + ' tiles/sec');
