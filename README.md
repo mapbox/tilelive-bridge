@@ -13,7 +13,7 @@ Implements the tilelive API for generating mapnik vector tiles from traditional 
 
 ## Installation
 
-    npm install tilelive-bridge
+    npm install @mapbox/tilelive-bridge
 
 Though `tilelive` is not a dependency of `tilelive-bridge` you will want to
 install it to actually make use of `tilelive-bridge` through a reasonable
@@ -23,7 +23,7 @@ API.
 
 ```javascript
 var tilelive = require('tilelive');
-require('tilelive-bridge').registerProtocols(tilelive);
+require('@mapbox/tilelive-bridge').registerProtocols(tilelive);
 
 tilelive.load('bridge:///path/to/file.xml', function(err, source) {
     if (err) throw err;
