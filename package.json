@@ -13,7 +13,7 @@
     }
   ],
   "dependencies": {
-    "mapnik": "~3.6.0",
+    "mapnik": "https://github.com/mapnik/node-mapnik/tarball/res-rollback",
     "@mapbox/sphericalmercator": "~1.0.1",
     "mapnik-pool": "~0.1.3"
   },
