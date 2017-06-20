@@ -20,7 +20,8 @@ var xml = {
 var rasterxml = {
     a: fs.readFileSync(path.resolve(path.join(__dirname,'/raster-a.xml')), 'utf8'),
     b: fs.readFileSync(path.resolve(path.join(__dirname,'/raster-b.xml')), 'utf8'),
-    c: fs.readFileSync(path.resolve(path.join(__dirname,'/raster-c.xml')), 'utf8')
+    c: fs.readFileSync(path.resolve(path.join(__dirname,'/raster-c.xml')), 'utf8'),
+    d: fs.readFileSync(path.resolve(path.join(__dirname,'/raster-d.xml')), 'utf8')
 };
 
 (function() {
