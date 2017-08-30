@@ -31,6 +31,7 @@ var ImagePool = function(size) {
 module.exports = Bridge;
 
 function Bridge(uri, callback) {
+    this.BRIDGE_MAX_VTILE_BYTES_COMPRESSED = process.env.BRIDGE_MAX_VTILE_BYTES_COMPRESSED ? +process.env.BRIDGE_MAX_VTILE_BYTES_COMPRESSED : 0;
     var source = this;
 
     if (typeof uri === 'string' || (uri.protocol && !uri.xml)) {
@@ -290,6 +291,9 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
         vtile.getData({compression:'gzip'}, function(err, pbfz) {
             if (err) return callback(err);
             headers['Content-Encoding'] = 'gzip';
+            if (source.BRIDGE_MAX_VTILE_BYTES_COMPRESSED > 0 && pbfz.length > source.BRIDGE_MAX_VTILE_BYTES_COMPRESSED) {
+                return callback(new Error("Tile >= max allowed size"), pbfz, headers);
+            }
             return callback(err, pbfz, headers);
         });
     });
