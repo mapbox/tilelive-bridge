@@ -8,7 +8,6 @@ var immediate = global.setImmediate || process.nextTick;
 var mapnik_pool = require('mapnik-pool');
 var Pool = mapnik_pool.Pool;
 var os = require('os');
-var bytes = require('bytes');
 
 // Register datasource plugins
 mapnik.register_default_input_plugins();
@@ -248,7 +247,7 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
 
 
     // The buffer size is in vector tile coordinates, while the buffer size on the
-    // map object is in image coordinates. Therefore, lets multiply the buffer_size 
+    // map object is in image coordinates. Therefore, lets multiply the buffer_size
     // by the old "path_multiplier" value of 16 to get a proper buffer size.
     try {
         // Try-catch is necessary here because the constructor will throw if x and y
@@ -257,7 +256,7 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
     } catch(err) {
         return callback(err, null, headers);
     }
-    
+
     map.extent = vtile.extent();
 
     /*
