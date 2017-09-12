@@ -13,12 +13,15 @@ var bytes = require('bytes');
 // Register datasource plugins
 mapnik.register_default_input_plugins();
 
-var stats = {max:0,total:0,count:0};
+if (process.env.BRIDGE_LOG_MAX_VTILE_BYTES_COMPRESSED) {
+    var stats = {max:0,total:0,count:0};
 
-process.on('exit',function() {
-    stats.avg = stats.total/stats.count;
-    fs.writeFileSync('stats.txt',JSON.stringify(stats));
-})
+    process.on('exit',function() {
+        stats.avg = stats.total/stats.count;
+        fs.writeFileSync('tilelive-bridge-stats.json',JSON.stringify(stats,null,1));
+    })
+}
+
 
 var mapnikPool = mapnik_pool(mapnik);
 
