@@ -1,5 +1,9 @@
 # Changlog
 
+## 2.5.0
+
+ - Add option to limit tiles by size in bytes [#92](https://github.com/mapbox/tilelive-bridge/pull/92)
+
 ## 2.4.0
 
  - Updated to use mapnik 3.6.0
@@ -71,7 +75,7 @@
 ## 1.2.6
 
  - Drain the mapnik-pool before destroying it during .close()
- 
+
 ## 1.2.5
 
  - Rollback getIndexableDocs limit change
