@@ -40,4 +40,8 @@ tilelive.load('bridge:///path/to/file.xml', function(err, source) {
 });
 ```
 
-If you'd like to get statistics about tiles above a certain byte size, you can provide the `BRIDGE_LOG_MAX_VTILE_BYTES_COMPRESSED=n` environment variable in your tilelive-driven application and this will generate a stats object on you file system named `tilelive-bridge-stats.json` which includes the average tile size, the maximum tile size, and the number of tiles greater than the threshold set with the environment variable.
+### Limiting tile sizes
+
+You can set a limit to the size of vector tiles created (in bytes) by setting the `BRIDGE_MAX_VTILE_BYTES_COMPRESSED=n` environment variable. If a tile is generated and larger than the threshold, the process will return `Tile >= max allowed size` as an error.
+
+If you'd like to get statistics about tiles above a certain byte size (before limiting with the above), you can provide the `BRIDGE_LOG_MAX_VTILE_BYTES_COMPRESSED=n` environment variable in your tilelive-driven application and this will generate a stats object on you file system named `tilelive-bridge-stats.json` which includes the average tile size, the maximum tile size, and the number of tiles greater than the threshold set with the environment variable.
