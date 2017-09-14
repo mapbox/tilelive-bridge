@@ -39,3 +39,5 @@ tilelive.load('bridge:///path/to/file.xml', function(err, source) {
     // The `.getGrid` is implemented accordingly.
 });
 ```
+
+If you'd like to get statistics about tiles above a certain byte size, you can provide the `BRIDGE_LOG_MAX_VTILE_BYTES_COMPRESSED=n` environment variable in your tilelive-driven application and this will generate a stats object on you file system named `tilelive-bridge-stats.json` which includes the average tile size, the maximum tile size, and the number of tiles greater than the threshold set with the environment variable.
