@@ -1,5 +1,9 @@
 # Changlog
 
+## 2.5.1
+
+ - Reduce mapnik dependency to include ~3.6.0 for any downstream users
+
 ## 2.5.0
 
  - Add option to limit tiles by size in bytes [#92](https://github.com/mapbox/tilelive-bridge/pull/92)
