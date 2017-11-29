@@ -255,7 +255,7 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
     try {
         // Try-catch is necessary here because the constructor will throw if x and y
         // are out of bounds at zoom-level z
-        var vtile = new mapnik.VectorTile(+z,+x,+y, {buffer_size:16*map.bufferSize});
+        var vtile = new mapnik.VectorTile(+z,+x,+y, {buffer_size:16*map.bufferSize, tile_size: 1024 });
     } catch(err) {
         return callback(err, null, headers);
     }
