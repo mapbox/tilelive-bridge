@@ -1,6 +1,6 @@
 {
   "name": "@mapbox/tilelive-bridge",
-  "version": "2.5.1",
+  "version": "2.6.0",
   "main": "./index.js",
   "description": "Datasource => vector tiles bridge backend for tilelive",
   "repository": {
@@ -14,7 +14,7 @@
   ],
   "dependencies": {
     "@mapbox/sphericalmercator": "~1.0.1",
-    "mapnik": "~3.6.0",
+    "mapnik": "~3.7.0",
     "mapnik-pool": "~0.1.3"
   },
   "devDependencies": {

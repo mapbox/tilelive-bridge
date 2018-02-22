@@ -1,5 +1,10 @@
 # Changlog
 
+
+## 2.6.0
+
+- Update mapnik to 3.7.0
+
 ## 2.5.1
 
  - Reduce mapnik dependency to include ~3.6.0 for any downstream users
