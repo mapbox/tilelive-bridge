@@ -1,6 +1,6 @@
 {
   "name": "@mapbox/tilelive-bridge",
-  "version": "2.6.0",
+  "version": "3.0.0",
   "main": "./index.js",
   "description": "Datasource => vector tiles bridge backend for tilelive",
   "repository": {

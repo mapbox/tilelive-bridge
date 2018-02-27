@@ -1,9 +1,9 @@
 # Changlog
 
-
-## 2.6.0
+## 3.0.0
 
 - Update mapnik to 3.7.0
+- Drops windows support for tilelive-bridge
 
 ## 2.5.1
 
