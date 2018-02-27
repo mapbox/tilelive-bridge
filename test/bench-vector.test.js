@@ -178,7 +178,7 @@ tape('vector bench async', function(assert) {
             if (process.env.NPM_FLAGS && process.env.NPM_FLAGS.indexOf('--debug') > -1) {
                 console.log("Skipping rate assertion, since we are running in debug mode");
             } else {
-                assert.equal(rate_async > 50, true, 'render ' + total + ' tiles @ ' + rate_async.toFixed(1) + ' tiles/sec');
+                assert.equal(rate_async > 40, true, 'render ' + total + ' tiles @ ' + rate_async.toFixed(1) + ' tiles/sec');
                 assert.equal(rate_async + 20 > rate_deferred, true); // should be at least roughly the same speed or faster
             }
 
