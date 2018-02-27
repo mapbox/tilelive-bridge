@@ -45,7 +45,7 @@ tape('raster bench', function(assert) {
             if (process.env.NPM_FLAGS && process.env.NPM_FLAGS.indexOf('--debug') > -1) {
                 console.log("Skipping rate assertion, since we are running in debug mode");
             } else {
-                assert.equal(rate > 20, true, 'render ' + total + ' tiles @ ' + rate.toFixed(1) + ' tiles/sec');
+                assert.equal(rate > 15, true, 'render ' + total + ' tiles @ ' + rate.toFixed(1) + ' tiles/sec');
             }
             assert.end();
         })

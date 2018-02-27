@@ -66,11 +66,6 @@ tape('vector bench deferred', function(assert) {
     });
 });
 
-// Currently there is a bug in std::future in xcode that will be fixed in 7.3 release
-// until that point the binaries built in OSX could possibly cause memory corruption 
-// when using non deferred processing (like a terrorist) when that is fixed this can be removed.
-if (process.platform != 'darwin') {
-
 tape('setup auto', function(assert) {
     new Bridge({ xml: fs.readFileSync(path.resolve(path.join(__dirname,'/bench-test-auto.xml')), 'utf8'), base:path.join(__dirname,'/'), blank:false }, function(err,s) {
         source = s;
@@ -120,7 +115,6 @@ tape('vector bench auto', function(assert) {
                 console.log("Skipping rate assertion, since we are running in debug mode");
             } else {
                assert.equal(rate_auto > 40, true, 'render ' + total + ' tiles @ ' + rate_auto.toFixed(1) + ' tiles/sec');
-               assert.equal(rate_auto + 20 > rate_deferred, true); // should be at least roughly the same speed or faster
             }
 
             assert.equal(total, 341);
@@ -178,8 +172,7 @@ tape('vector bench async', function(assert) {
             if (process.env.NPM_FLAGS && process.env.NPM_FLAGS.indexOf('--debug') > -1) {
                 console.log("Skipping rate assertion, since we are running in debug mode");
             } else {
-                assert.equal(rate_async > 50, true, 'render ' + total + ' tiles @ ' + rate_async.toFixed(1) + ' tiles/sec');
-                assert.equal(rate_async + 20 > rate_deferred, true); // should be at least roughly the same speed or faster
+                assert.equal(rate_async > 40, true, 'render ' + total + ' tiles @ ' + rate_async.toFixed(1) + ' tiles/sec');
             }
 
             assert.equal(total, 341);
@@ -188,5 +181,3 @@ tape('vector bench async', function(assert) {
         })
     });
 });
-
-}
