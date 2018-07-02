@@ -14,8 +14,8 @@
   ],
   "dependencies": {
     "@mapbox/sphericalmercator": "~1.0.1",
-    "mapnik": "~3.7.0",
-    "mapnik-pool": "~0.1.3"
+    "mapnik": "3.x || 4.x",
+    "mapnik-pool": "https://github.com/mapbox/mapnik-pool/tarball/mapnik-4"
   },
   "devDependencies": {
     "queue-async": "1.0.7",
