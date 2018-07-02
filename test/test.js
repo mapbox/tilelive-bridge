@@ -7,7 +7,7 @@ var tape = require('tape');
 var UPDATE = process.env.UPDATE;
 var deepEqual = require('deep-equal');
 var util = require('util');
-var mapnik_pool = require('mapnik-pool');
+var mapnik_pool = require('@mapbox/mapnik-pool');
 var mapnikPool = mapnik_pool(mapnik);
 
 // Load fixture data.

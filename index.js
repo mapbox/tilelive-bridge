@@ -5,7 +5,7 @@ var fs = require('fs');
 var qs = require('querystring');
 var sm = new (require('@mapbox/sphericalmercator'))();
 var immediate = global.setImmediate || process.nextTick;
-var mapnik_pool = require('mapnik-pool');
+var mapnik_pool = require('@mapbox/mapnik-pool');
 var Pool = mapnik_pool.Pool;
 var os = require('os');
 
