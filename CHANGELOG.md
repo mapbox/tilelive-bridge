@@ -1,5 +1,9 @@
 # Changlog
 
+## 3.1.0
+
+- Write tile size stats JSON file to the operating system tmp directory, rather than in the current working directory [#100](https://github.com/mapbox/tilelive-bridge/pull/100)
+
 ## 3.0.0
 
 - Update mapnik to 3.7.0
