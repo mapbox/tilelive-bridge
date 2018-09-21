@@ -1,5 +1,9 @@
 # Changlog
 
+## 3.1.1
+
+- Update os.tmpDir to os.tmpdir to silence deprecation warnings from node.js v8.x
+
 ## 3.1.0
 
 - Write tile size stats JSON file to the operating system tmp directory, rather than in the current working directory [#100](https://github.com/mapbox/tilelive-bridge/pull/100)
