@@ -19,7 +19,7 @@ if (process.env.BRIDGE_LOG_MAX_VTILE_BYTES_COMPRESSED) {
     process.on('exit', function() {
         stats.avg = stats.total/stats.count;
         if (stats.count > 0) {
-            fs.writeFileSync(os.tmpDir() + '/tilelive-bridge-stats.json', JSON.stringify(stats));
+            fs.writeFileSync(os.tmpdir() + '/tilelive-bridge-stats.json', JSON.stringify(stats));
         }
     });
 }
