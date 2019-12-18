@@ -1,5 +1,9 @@
 # Changlog
 
+## 3.2.0
+
+- Updated dependencies to allow install with node v10
+
 ## 3.1.1
 
 - Update os.tmpDir to os.tmpdir to silence deprecation warnings from node.js v8.x
