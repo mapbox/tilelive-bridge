@@ -20,7 +20,7 @@
   "devDependencies": {
     "coveralls": "^3.0.2",
     "deep-equal": "~1.0.0",
-    "eslint": "^5.13.0",
+    "eslint": "^6.7.2",
     "eslint-config-unstyled": "^1.1.0",
     "istanbul": "^0.4.5",
     "queue-async": "1.0.7",
