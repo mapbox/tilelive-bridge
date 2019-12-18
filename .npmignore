@@ -2,3 +2,6 @@
 /test
 .travis.yml
 appveyor.yml
+.eslintrc
+scripts/
+*.tgz
