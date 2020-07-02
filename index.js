@@ -8,6 +8,7 @@ var immediate = global.setImmediate || process.nextTick;
 var mapnik_pool = require('mapnik-pool');
 var Pool = mapnik_pool.Pool;
 var os = require('os');
+var utils = require('./utils.js');
 
 // Register datasource plugins
 mapnik.register_default_input_plugins();
@@ -237,15 +238,22 @@ Bridge.getRaster = function(source, map, im, z, x, y, callback) {
                 }
                 buffer.solid = pixel_key;
 
-                // collect stats for raster data
-                if (source.BRIDGE_LOG_MAX_VTILE_BYTES_COMPRESSED > 0 && buffer.length > source.BRIDGE_LOG_MAX_VTILE_BYTES_COMPRESSED) {
+                if (source.BRIDGE_LOG_MAX_VTILE_BYTES_COMPRESSED > 0 && buffer.length) {
                     stats.count++;
                     stats.total = stats.total + (buffer.length*0.001);
                     if (stats.max < buffer.length) {
                         stats.max = buffer.length;
                     }
-                }
+                    var area = stats.hasOwnProperty(z)
+                        ? stats[z] + utils.calculateTileArea(z, x, y)
+                        : utils.calculateTileArea(z, x, y);
 
+                    stats = {
+                        ...stats,
+                        [z]: area
+                    };
+
+                }
                 return callback(err, buffer, {'Content-Type':'image/webp'});
             });
         });
@@ -318,6 +326,15 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
             if (source.BRIDGE_LOG_MAX_VTILE_BYTES_COMPRESSED > 0 && pbfz.length > source.BRIDGE_LOG_MAX_VTILE_BYTES_COMPRESSED) {
                 stats.count++;
                 stats.total = stats.total + (pbfz.length*0.001);
+                var area = stats.hasOwnProperty(z)
+                  ? stats[z] + utils.calculateTileArea(z, x, y)
+                  : utils.calculateTileArea(z, x, y);
+
+                stats = {
+                    ...stats,
+                    [z]: area
+                };
+
                 if (stats.max < pbfz.length) {
                     stats.max = pbfz.length;
                 }
