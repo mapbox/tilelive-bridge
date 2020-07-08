@@ -1,5 +1,9 @@
 # Changlog
 
+## 3.1.2
+
+- Backport of 3.2.1
+
 ## 3.1.1
 
 - Update os.tmpDir to os.tmpdir to silence deprecation warnings from node.js v8.x

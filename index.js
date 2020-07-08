@@ -236,6 +236,16 @@ Bridge.getRaster = function(source, map, im, z, x, y, callback) {
                     return callback(err);
                 }
                 buffer.solid = pixel_key;
+
+                // collect stats for raster data
+                if (source.BRIDGE_LOG_MAX_VTILE_BYTES_COMPRESSED > 0 && buffer.length > source.BRIDGE_LOG_MAX_VTILE_BYTES_COMPRESSED) {
+                    stats.count++;
+                    stats.total = stats.total + (buffer.length*0.001);
+                    if (stats.max < buffer.length) {
+                        stats.max = buffer.length;
+                    }
+                }
+
                 return callback(err, buffer, {'Content-Type':'image/webp'});
             });
         });
