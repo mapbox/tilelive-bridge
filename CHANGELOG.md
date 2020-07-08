@@ -1,5 +1,9 @@
 # Changlog
 
+## 3.2.1 
+
+- Generate and save stats for raster sources
+
 ## 3.2.0
 
 - Updated dependencies to allow install with node v10
