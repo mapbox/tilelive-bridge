@@ -6,7 +6,7 @@ const { calculateTileArea } = require('../utils.js');
 
 tape('[Utils] Tile SQKM calculation', function (t) {
     t.plan(2);
-    t.test('should have equal SQKM', function(assert) {
+    t.test('sub-tiles should have same area as parent tile', function(assert) {
         assert.plan(1);
         var acutal = [
             [1, 0, 0],
@@ -44,7 +44,6 @@ tape('[Utils] Tile SQKM calculation', function (t) {
 
     });
 });
-
 
 
 
