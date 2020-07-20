@@ -54,6 +54,7 @@ tape('[sqkm-stats-vector-tile] should generate a file that has SQKM stats per zo
 
     setTimeout(function() {
         process.on('exit', function () {
+            var assert = require('assert');
             var stats = JSON.parse(fs.readFileSync(os.tmpdir() + '/tilelive-bridge-stats.json').toString());
             var expected = [
                 [ 0, 508164394 ],
@@ -69,15 +70,16 @@ tape('[sqkm-stats-vector-tile] should generate a file that has SQKM stats per zo
                 return [+zoom, Math.round(stats[zoom])];
             });
 
-            const hasCorrectZooms = actual.length === expected.length;
+            assert.equal(actual.length, expected.length, 'should have equal stats');
+
             const hasValidStats = expected.every(function(stat, index) {
                 var [expectedZoom, expectedSqKmArea] = stat;
                 var [actualZoom, actualSqKmArea] = actual[index];
                 return (expectedSqKmArea === actualSqKmArea) && (expectedZoom === actualZoom);
             });
-            hasCorrectZooms && hasValidStats
-                ? console.info('tilelive-bridge-stats.json has correct stats for raster Tiles')
-                : console.error('tilelive-bridge-stats.json has incorrect stats for raster Tiles');
+
+            assert.equal(hasValidStats, true, 'should have valid stats in the stats file');
+
             process.exit.isSinonProxy ? process.exit.restore() : '';
             delete process.env.BRIDGE_LOG_MAX_VTILE_BYTES_COMPRESSED;
         });
