@@ -1,7 +1,10 @@
 {
   "name": "@mapbox/tilelive-bridge",
-  "version": "3.2.1",
+  "version": "3.2.2",
   "main": "./index.js",
+  "engines": {
+    "node": ">=8"
+  },
   "description": "Datasource => vector tiles bridge backend for tilelive",
   "repository": {
     "type": "git",
@@ -24,10 +27,12 @@
     "eslint-config-unstyled": "^1.1.0",
     "istanbul": "^0.4.5",
     "queue-async": "1.0.7",
+    "sinon": "^9.0.2",
+    "tap-spec": "^5.0.0",
     "tape": "^4.10.1"
   },
   "scripts": {
-    "test": "eslint index.js && tape test/*.js",
+    "test": "eslint index.js && tape test/*.js | tap-spec",
     "coverage": "istanbul cover tape test/*.js && coveralls < ./coverage/lcov.info"
   }
 }
