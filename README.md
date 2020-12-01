@@ -2,7 +2,7 @@ tilelive-bridge
 ---------------
 Implements the tilelive API for generating mapnik vector tiles from traditional mapnik datasources.
 
-[![Build Status](https://secure.travis-ci.org/mapbox/tilelive-bridge.png)](http://travis-ci.org/mapbox/tilelive-bridge)
+[![Build Status](https://travis-ci.com/mapbox/tilelive-bridge.svg?branch=master)](http://travis-ci.com/mapbox/tilelive-bridge)
 
 ### new Bridge(options, callback)
 
