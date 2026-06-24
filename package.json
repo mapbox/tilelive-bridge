@@ -1,6 +1,6 @@
 {
   "name": "@mapbox/tilelive-bridge",
-  "version": "3.2.2",
+  "version": "3.2.3",
   "main": "./index.js",
   "engines": {
     "node": ">=8"
@@ -34,5 +34,8 @@
   "scripts": {
     "test": "eslint index.js && tape test/*.js | tap-spec",
     "coverage": "istanbul cover tape test/*.js && coveralls < ./coverage/lcov.info"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
