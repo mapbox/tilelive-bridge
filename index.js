@@ -275,7 +275,7 @@ Bridge.getVector = function(source, map, z, x, y, callback) {
         // are out of bounds at zoom-level z
         var vtile = new mapnik.VectorTile(+z,+x,+y, {buffer_size:16*map.bufferSize});
     } catch(err) {
-        return callback(err, null, headers);
+        return callback(invalid(err.message, null, headers));
     }
 
     map.extent = vtile.extent();
@@ -517,3 +517,9 @@ Bridge.prototype.getIndexableDocs = function(pointer, callback) {
         feature();
     });
 };
+
+function invalid(msg) {
+    var err = new Error(msg);
+    err.code = 'EINVALID';
+    return err;
+}
